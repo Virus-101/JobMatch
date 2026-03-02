@@ -6,7 +6,8 @@
   "permissions": [
     "storage",
     "activeTab",
-    "tabs"
+    "tabs",
+    "contextMenus"
   ],
   "host_permissions": [
     "https://www.linkedin.com/*",
@@ -38,12 +39,31 @@
         "https://www.monster.com/*",
         "https://www.ziprecruiter.com/*"
       ],
-      "js": ["utils/storage.js", "utils/cv-parser.js", "utils/job-matcher.js", "content/content.js"],
-      "css": ["content/content.css"],
+      "js": [
+        "utils/storage.js",
+        "utils/cv-parser.js",
+        "utils/job-matcher.js",
+        "content/content.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "background": {
     "service_worker": "background/background.js"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "libs/pdf.min.mjs",
+        "libs/pdf.worker.min.mjs",
+        "libs/mammoth.browser.min.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

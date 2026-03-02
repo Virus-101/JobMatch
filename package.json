@@ -1,0 +1,16 @@
+{
+  "name": "auto-apply",
+  "version": "1.0.0",
+  "description": "> **Score, save, and track jobs automatically based on your CV and preferences.**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^5.5.207"
+  }
+}

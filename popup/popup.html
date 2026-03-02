@@ -169,13 +169,52 @@
 
     <!-- Profile Tab -->
     <section class="tab-content" id="tab-profile">
-      <!-- Step 1: CV Input -->
+      <!-- Step 1: CV Upload or Paste -->
       <div class="card">
-        <h3>📄 Your CV / Resume</h3>
-        <p class="helper-text">Paste your CV/resume text below. We'll auto-detect <strong>everything</strong> — name,
-          title, skills, experience, education, and more. You can then review and edit.</p>
-        <textarea id="cvTextArea" class="textarea" rows="8"
-          placeholder="Paste your CV/resume text here...&#10;&#10;Example:&#10;John Doe&#10;Software Engineer&#10;New York, NY&#10;john@example.com | +1 234 567 890&#10;&#10;Summary:&#10;Experienced developer specializing in React and Node.js...&#10;&#10;Skills: JavaScript, React, Node.js, Python, Docker&#10;&#10;Experience:&#10;Senior Developer at TechCorp — 2020 - Present&#10;• Built scalable web applications&#10;• Led team of 5 developers&#10;&#10;Education:&#10;BSc Computer Science, MIT — 2016"></textarea>
+        <h3>📄 Upload or Paste Your CV</h3>
+        <p class="helper-text">Upload a <strong>PDF</strong>, <strong>DOCX</strong>, or <strong>TXT</strong> file — or
+          paste text directly. We'll auto-detect everything.</p>
+
+        <!-- File Upload Drop Zone -->
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="cvFileInput" accept=".pdf,.docx,.doc,.txt,.rtf" hidden>
+          <div class="upload-zone-content" id="uploadZoneContent">
+            <div class="upload-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <p class="upload-text">Drag & drop your CV here</p>
+            <p class="upload-subtext">or <button class="upload-browse-btn" id="btnBrowseFile">browse files</button></p>
+            <p class="upload-formats">PDF, DOCX, TXT — Max 10MB</p>
+          </div>
+          <!-- File info (shown after upload) -->
+          <div class="upload-file-info" id="uploadFileInfo" style="display: none;">
+            <div class="file-icon" id="fileIcon">📄</div>
+            <div class="file-details">
+              <span class="file-name" id="fileName">document.pdf</span>
+              <span class="file-size" id="fileSize">245 KB</span>
+            </div>
+            <button class="file-remove-btn" id="btnRemoveFile" title="Remove file">✕</button>
+          </div>
+        </div>
+
+        <!-- Processing indicator -->
+        <div class="processing-indicator" id="processingIndicator" style="display: none;">
+          <div class="processing-spinner"></div>
+          <span>Extracting text from your CV...</span>
+        </div>
+
+        <!-- Divider -->
+        <div class="upload-divider">
+          <span>or paste text directly</span>
+        </div>
+
+        <!-- Text paste area -->
+        <textarea id="cvTextArea" class="textarea" rows="5" placeholder="Paste your CV/resume text here..."></textarea>
+
         <button class="btn btn-primary btn-full" id="btnParseCV">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -433,9 +472,12 @@
     <div class="toast-container" id="toastContainer"></div>
   </div>
 
+  <script src="../libs/mammoth.browser.min.js"></script>
+  <script src="../libs/pdf-loader.js"></script>
   <script src="../utils/storage.js"></script>
   <script src="../utils/cv-parser.js"></script>
   <script src="../utils/job-matcher.js"></script>
+  <script src="../utils/file-parser.js"></script>
   <script src="popup.js"></script>
 </body>
 

@@ -308,15 +308,131 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
 
     // ══════════════════════════════════════════
+    // ★ FILE UPLOAD — Drag & Drop + Browse ★
+    // ══════════════════════════════════════════
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('cvFileInput');
+    const uploadZoneContent = document.getElementById('uploadZoneContent');
+    const uploadFileInfo = document.getElementById('uploadFileInfo');
+    const processingIndicator = document.getElementById('processingIndicator');
+    let uploadedFile = null;
+
+    // Browse button
+    document.getElementById('btnBrowseFile').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.click();
+    });
+
+    // Click on upload zone = open file browser
+    uploadZone.addEventListener('click', (e) => {
+        if (e.target.closest('.file-remove-btn') || e.target.closest('.upload-browse-btn')) return;
+        if (!uploadedFile) fileInput.click();
+    });
+
+    // Drag events
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+    });
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleFileSelected(files[0]);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) handleFileSelected(fileInput.files[0]);
+    });
+
+    // Remove file
+    document.getElementById('btnRemoveFile').addEventListener('click', (e) => {
+        e.stopPropagation();
+        uploadedFile = null;
+        fileInput.value = '';
+        uploadZone.classList.remove('has-file');
+        uploadZoneContent.style.display = 'flex';
+        uploadFileInfo.style.display = 'none';
+        document.getElementById('cvTextArea').value = '';
+    });
+
+    // Handle file selection
+    async function handleFileSelected(file) {
+        // Validate
+        if (typeof FileParser !== 'undefined') {
+            const validation = FileParser.validate(file);
+            if (!validation.valid) {
+                showToast(validation.errors[0], 'error');
+                return;
+            }
+        }
+
+        uploadedFile = file;
+
+        // Update UI to show file info
+        const ext = file.name.split('.').pop().toLowerCase();
+        const icons = { pdf: '📕', docx: '📘', doc: '📘', txt: '📄', rtf: '📄' };
+        document.getElementById('fileIcon').textContent = icons[ext] || '📄';
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = typeof FileParser !== 'undefined'
+            ? FileParser.formatSize(file.size)
+            : Math.round(file.size / 1024) + ' KB';
+
+        uploadZone.classList.add('has-file');
+        uploadZoneContent.style.display = 'none';
+        uploadFileInfo.style.display = 'flex';
+
+        // Extract text from file
+        processingIndicator.style.display = 'flex';
+
+        try {
+            let extractedText = '';
+
+            if (typeof FileParser !== 'undefined') {
+                extractedText = await FileParser.extractText(file);
+            } else {
+                // Fallback for plain text
+                extractedText = await file.text();
+            }
+
+            processingIndicator.style.display = 'none';
+
+            if (extractedText && extractedText.trim().length > 10) {
+                // Fill the textarea with extracted text
+                document.getElementById('cvTextArea').value = extractedText;
+                showToast(`📄 Extracted ${extractedText.length.toLocaleString()} characters from ${file.name}`, 'success');
+
+                // Auto-parse immediately
+                parseAndApplyCV(extractedText);
+            } else {
+                showToast('Could not extract enough text from this file. Try a different format.', 'error');
+            }
+        } catch (err) {
+            processingIndicator.style.display = 'none';
+            console.error('[FileParser] Error:', err);
+            showToast(`Error reading file: ${err.message}`, 'error');
+        }
+    }
+
+    // ══════════════════════════════════════════
     // ★ CV PARSING — The main detection flow ★
     // ══════════════════════════════════════════
     document.getElementById('btnParseCV').addEventListener('click', () => {
         const cvText = document.getElementById('cvTextArea').value;
         if (!cvText.trim()) {
-            showToast('Please paste your CV text first.', 'error');
+            showToast('Please upload a file or paste your CV text first.', 'error');
             return;
         }
+        parseAndApplyCV(cvText);
+    });
 
+    // Shared function: parse CV text and apply to profile
+    function parseAndApplyCV(cvText) {
         const parsed = CVParser.parse(cvText);
         if (!parsed) {
             showToast('Could not parse CV. Try again.', 'error');
@@ -423,7 +539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (parsed.education.length > 0) detectedItems.push(`${parsed.education.length} education`);
 
         showToast(`✅ Detected: ${detectedItems.join(', ')}. Review & edit below!`, 'success');
-    });
+    }
 
     // ── Detection Summary Panel ──────────────
     function showDetectionSummary(parsed) {
