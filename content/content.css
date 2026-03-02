@@ -1,0 +1,139 @@
+/* ============================================
+   JobMatch AI — Content Script Styles
+   Injected into job sites
+   ============================================ */
+
+/* ── Score Badge ───────────────────────────── */
+.jm-badge {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 9999 !important;
+    padding: 6px 10px !important;
+    background: rgba(15, 15, 26, 0.92) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    animation: jm-fadeIn 0.3s ease !important;
+    transition: all 0.2s ease !important;
+}
+
+.jm-badge:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+@keyframes jm-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── Score Number ──────────────────────────── */
+.jm-badge-score {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ── Badge Info ─────────────────────────────── */
+.jm-badge-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+}
+
+.jm-badge-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #F1F1F8 !important;
+    white-space: nowrap !important;
+}
+
+.jm-badge-skills {
+    font-size: 10px !important;
+    color: #818CF8 !important;
+    white-space: nowrap !important;
+    max-width: 150px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* ── Save Button ───────────────────────────── */
+.jm-save-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: #818CF8 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    flex-shrink: 0 !important;
+}
+
+.jm-save-btn:hover {
+    background: rgba(99, 102, 241, 0.25) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    transform: scale(1.05) !important;
+}
+
+.jm-save-btn.jm-saved {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: #10B981 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+/* ── Highlight borders for high matches ────── */
+[data-jobmatch-processed] {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.jm-badge[data-score]:not([data-score="0"]) {
+    cursor: default;
+}
+
+/* ── Responsive adjustments for various sites ── */
+
+/* LinkedIn specific */
+.job-card-container .jm-badge,
+.jobs-search-results__list-item .jm-badge {
+    top: 6px !important;
+    right: 6px !important;
+}
+
+/* Indeed specific */
+.job_seen_beacon .jm-badge,
+.resultContent .jm-badge {
+    top: 4px !important;
+    right: 4px !important;
+}
+
+/* Glassdoor specific */
+.react-job-listing .jm-badge {
+    top: 8px !important;
+    right: 8px !important;
+}

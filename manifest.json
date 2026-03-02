@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "JobMatch AI",
+  "version": "1.0.0",
+  "description": "Smart job matching based on your CV and preferences. Score jobs, track applications, and land your dream role.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://www.indeed.com/*",
+    "https://www.glassdoor.com/*",
+    "https://www.monster.com/*",
+    "https://www.ziprecruiter.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.linkedin.com/jobs/*",
+        "https://www.linkedin.com/feed/*",
+        "https://www.indeed.com/*",
+        "https://www.glassdoor.com/*",
+        "https://www.monster.com/*",
+        "https://www.ziprecruiter.com/*"
+      ],
+      "js": ["utils/storage.js", "utils/cv-parser.js", "utils/job-matcher.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  }
+}

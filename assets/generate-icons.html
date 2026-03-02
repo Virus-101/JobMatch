@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Generate Icons</title>
+</head>
+
+<body>
+    <canvas id="c128" width="128" height="128"></canvas>
+    <canvas id="c48" width="48" height="48"></canvas>
+    <canvas id="c16" width="16" height="16"></canvas>
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const s = canvas.width;
+
+            // Background gradient
+            const grad = ctx.createLinearGradient(0, 0, s, s);
+            grad.addColorStop(0, '#6366F1');
+            grad.addColorStop(1, '#8B5CF6');
+
+            // Rounded rect
+            const r = s * 0.18;
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.lineTo(s - r, 0);
+            ctx.quadraticCurveTo(s, 0, s, r);
+            ctx.lineTo(s, s - r);
+            ctx.quadraticCurveTo(s, s, s - r, s);
+            ctx.lineTo(r, s);
+            ctx.quadraticCurveTo(0, s, 0, s - r);
+            ctx.lineTo(0, r);
+            ctx.quadraticCurveTo(0, 0, r, 0);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Briefcase
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+            ctx.lineWidth = s * 0.04;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const bx = s * 0.2, by = s * 0.35;
+            const bw = s * 0.6, bh = s * 0.4;
+            const br = s * 0.06;
+
+            // Briefcase body rounded
+            ctx.beginPath();
+            ctx.moveTo(bx + br, by);
+            ctx.lineTo(bx + bw - br, by);
+            ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+            ctx.lineTo(bx + bw, by + bh - br);
+            ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+            ctx.lineTo(bx + br, by + bh);
+            ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+            ctx.lineTo(bx, by + br);
+            ctx.quadraticCurveTo(bx, by, bx + br, by);
+            ctx.stroke();
+
+            // Handle
+            ctx.beginPath();
+            ctx.moveTo(s * 0.38, by);
+            ctx.lineTo(s * 0.38, s * 0.25);
+            ctx.lineTo(s * 0.62, s * 0.25);
+            ctx.lineTo(s * 0.62, by);
+            ctx.stroke();
+
+            // Target circle
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = s * 0.03;
+            ctx.beginPath();
+            ctx.arc(s * 0.65, s * 0.6, s * 0.12, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Target dot
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.beginPath();
+            ctx.arc(s * 0.65, s * 0.6, s * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+
+            return canvas.toDataURL('image/png');
+        }
+
+        // Draw all sizes
+        ['c128', 'c48', 'c16'].forEach(id => {
+            const url = drawIcon(document.getElementById(id));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `icon${document.getElementById(id).width}.png`;
+            document.body.appendChild(a);
+            a.textContent = `Download ${id}`;
+            a.style.display = 'block';
+            a.style.margin = '10px';
+        });
+    </script>
+</body>
+
+</html>
