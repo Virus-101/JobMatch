@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', () => switchPanel(link.dataset.panel));
     });
 
-    // ── CV Parser (self-contained) ───────────
+    // ── CV Parser (self-contained, v2) ────────
     const CVParser = {
         parse(text) {
             if (!text || typeof text !== 'string') return null;
@@ -45,102 +45,257 @@ document.addEventListener('DOMContentLoaded', () => {
                 contact: this.extractContact(text),
                 summary: this.extractSummary(lines),
                 languages: this.extractLanguages(text, lines),
+                linkedin: this.extractLinkedIn(text),
+                website: this.extractWebsite(text),
+                certifications: this.extractCertifications(lines),
                 rawText: text
             };
         },
+        // ─ Name ─
         extractName(lines) {
             for (let i = 0; i < Math.min(5, lines.length); i++) {
                 const l = lines[i];
-                if (l.match(/@|http|www\.|skills|experience|education|summary|objective|phone|address/i)) continue;
+                if (l.match(/@|http|www\.|skills|experience|education|summary|objective|phone|address|technical|expertise|professional/i)) continue;
                 if (l.match(/^\+?\d[\d\s\-().]{7,}$/)) continue;
+                if (l.match(/^(email|phone|linkedin|portfolio|website|personal)/i)) continue;
                 const words = l.split(/\s+/);
-                if (words.length >= 2 && words.length <= 5 && words.every(w => /^[A-Z][a-zA-Z'.()-]+$/.test(w))) return l;
+                if (words.length >= 2 && words.length <= 5 && words.every(w => /^[A-Z][a-zA-Z'.()-]*$/.test(w))) return l;
             }
             return null;
         },
+        // ─ Title ─
         extractTitle(lines, text) {
-            const titles = ['engineer', 'developer', 'designer', 'manager', 'analyst', 'architect', 'consultant', 'director', 'specialist', 'coordinator', 'administrator', 'lead', 'scientist', 'researcher', 'intern', 'associate', 'executive', 'officer', 'president', 'founder', 'head of'];
+            const titleKw = ['engineer', 'developer', 'designer', 'manager', 'analyst', 'architect', 'consultant', 'director', 'specialist', 'coordinator', 'administrator', 'lead', 'scientist', 'researcher', 'intern', 'associate', 'executive', 'officer', 'president', 'founder', 'head of', 'data engineer', 'devops', 'full stack', 'frontend', 'backend'];
             for (let i = 0; i < Math.min(8, lines.length); i++) {
                 const low = lines[i].toLowerCase();
-                for (const t of titles) {
-                    if (low.includes(t) && lines[i].length < 60 && !low.match(/experience|education|skills|summary/)) return lines[i];
+                if (low.match(/^(experience|education|skills|summary|technical|professional\s+summary|work|expertise|contact|email|phone|linkedin|portfolio)/i)) continue;
+                for (const t of titleKw) {
+                    if (low.includes(t) && lines[i].length < 60) return lines[i];
                 }
             }
             const tm = text.match(/(?:title|position|role)\s*[:\-–]\s*(.+)/i);
             return tm ? tm[1].trim() : null;
         },
+        // ─ Location ─ (fixed: skip tech terms, look for cities/countries)
         extractLocation(text, lines) {
-            const patterns = [/([A-Z][a-zA-Z\s]+,\s*[A-Z]{2})\b/, /([A-Z][a-zA-Z\s]+,\s*[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/];
-            for (let i = 0; i < Math.min(8, lines.length); i++) {
-                for (const p of patterns) { const m = lines[i].match(p); if (m) return m[1]; }
+            // Known countries/regions for validation
+            const countries = ['usa', 'us', 'uk', 'canada', 'australia', 'germany', 'france', 'italy', 'spain', 'netherlands', 'switzerland', 'sweden', 'norway', 'denmark', 'india', 'japan', 'china', 'brazil', 'mexico', 'portugal', 'ireland', 'belgium', 'austria', 'poland', 'czech', 'romania', 'hungary', 'ukraine', 'russia', 'turkey', 'israel', 'uae', 'saudi arabia', 'singapore', 'south korea', 'new zealand', 'argentina', 'chile', 'colombia', 'egypt', 'south africa', 'nigeria', 'kenya', 'morocco', 'algeria', 'tunisia', 'ghana'];
+            const techTerms = ['git', 'vs', 'code', 'docker', 'aws', 'linux', 'python', 'javascript', 'node', 'react', 'angular', 'vue', 'sql', 'html', 'css', 'postman', 'jenkins', 'terraform', 'kubernetes', 'vscode', 'vs code', 'bash', 'c\\+\\+', 'mongodb', 'redis'];
+            // Try explicit label first
+            const labelMatch = text.match(/(?:location|address|city|based in)\s*[:\-–]\s*(.+)/i);
+            if (labelMatch) return labelMatch[1].trim().split('\n')[0];
+            // Try University location (e.g., "University of Pavia, Italy")
+            const uniMatch = text.match(/university\s+of\s+[\w\s]+,\s*([A-Z][a-zA-Z]+)/i);
+            if (uniMatch) {
+                const country = uniMatch[1].toLowerCase();
+                if (countries.includes(country)) return uniMatch[0].split(',').pop().trim();
             }
-            const m = text.match(/(?:location|address|city)\s*[:\-–]\s*(.+)/i);
-            return m ? m[1].trim().split('\n')[0] : null;
+            // Try "City, State/Country" pattern in first 10 lines only, but skip tech terms
+            for (let i = 0; i < Math.min(10, lines.length); i++) {
+                const l = lines[i];
+                if (l.match(/tools|os|programming|languages|database|cloud|technical|expertise/i)) continue;
+                const m = l.match(/([A-Z][a-zA-Z\s]+,\s*[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/);
+                if (m) {
+                    const loc = m[1];
+                    const locLow = loc.toLowerCase();
+                    const isTech = techTerms.some(t => new RegExp('\\b' + t + '\\b', 'i').test(locLow));
+                    if (!isTech) return loc;
+                }
+            }
+            // Try to find country mentions tied to universities or addresses
+            const countryMatch = text.match(/,\s*(Italy|Germany|France|UK|USA|Canada|Australia|Netherlands|Spain|Switzerland|Sweden|India|Japan|Brazil|Ukraine|Ireland|Belgium|Austria|Poland)\b/i);
+            if (countryMatch) return countryMatch[0].replace(/^,\s*/, '');
+            return null;
         },
+        // ─ Skills ─ (expanded DB with 90+ skills)
         extractSkills(text) {
-            const skillsDb = ['JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'React', 'Angular', 'Vue', 'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'Next.js', 'Nuxt', 'Svelte', 'HTML', 'CSS', 'SASS', 'Tailwind', 'Bootstrap', 'SQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Firebase', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'Git', 'Linux', 'REST', 'GraphQL', 'CI/CD', 'Agile', 'Scrum', 'Figma', 'Photoshop', 'Machine Learning', 'AI', 'TensorFlow', 'PyTorch', 'NLP', 'Data Science', 'DevOps', 'Terraform', 'Jenkins', 'Webpack', 'Vite'];
-            return skillsDb.filter(s => {
+            const skillsDb = [
+                'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'C', 'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'R', 'Scala', 'Perl', 'Matlab',
+                'React', 'Angular', 'Vue', 'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'Next.js', 'Nuxt', 'Svelte', 'FastAPI',
+                'HTML', 'CSS', 'SASS', 'Tailwind', 'Bootstrap',
+                'SQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Firebase', 'SQLite', 'Cassandra', 'DynamoDB', 'Elasticsearch',
+                'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'Git', 'Linux', 'REST', 'RESTful APIs', 'GraphQL',
+                'CI/CD', 'Agile', 'Scrum', 'Kanban',
+                'Figma', 'Photoshop', 'Adobe XD',
+                'Machine Learning', 'AI', 'TensorFlow', 'PyTorch', 'Scikit-learn', 'NLP', 'Data Science', 'Deep Learning', 'Computer Vision', 'OpenCV', 'YOLO',
+                'DevOps', 'Terraform', 'Jenkins', 'Webpack', 'Vite', 'Ansible', 'Nginx',
+                'Raspberry Pi', 'Arduino',
+                'Pandas', 'NumPy', 'Matplotlib', 'Jupyter',
+                'Postman', 'Swagger',
+                'Apache Spark', 'Kafka', 'Airflow', 'Hadoop',
+                'Power BI', 'Tableau',
+                'Unity', 'Unreal Engine',
+                'Heroku', 'Netlify', 'Vercel',
+                'OAuth', 'JWT',
+                'WebSockets', 'Socket.io',
+                'Twilio', 'Stripe',
+                'LSTM', 'CNN', 'RNN', 'GAN', 'Transformers', 'BERT', 'GPT'
+            ];
+            const found = [];
+            for (const s of skillsDb) {
                 const esc = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                return new RegExp(`\\b${esc}\\b`, 'i').test(text);
-            });
+                // Special handling for single-letter/short skills like "C" and "R"
+                let pattern;
+                if (s === 'C') {
+                    pattern = /\bC\b(?![\+#\/])/; // Match "C" but not C++, C#, CI/CD
+                    if (pattern.test(text) && (text.includes('C/C++') || text.includes('C,') || text.match(/\bC\s+programming/i))) {
+                        found.push(s);
+                    }
+                } else if (s === 'R') {
+                    if (/\bR\b/.test(text) && /\bR\s+(programming|studio|language)/i.test(text)) found.push(s);
+                } else {
+                    pattern = new RegExp(`\\b${esc}\\b`, 'i');
+                    if (pattern.test(text)) found.push(s);
+                }
+            }
+            return found;
         },
+        // ─ Experience ─ (handles multi-line title/company)
         extractExperience(lines) {
+            const entries = []; let sec = false; let cur = null; let prevLine = '';
+            const isHeader = l => /^(work\s+)?experience\b/i.test(l);
+            const isEndSec = l => /^(education|skills|technical|certif|project|key\s+tech|language|interest|reference|hobbies)/i.test(l);
+            const isDate = l => l.match(/(\b\d{4}\b)\s*[-–—to]+\s*(present|\d{4})/i) || l.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{4}\s*[-–—to]+\s*(present|\w+\s+\d{4})/i);
+            const isBullet = l => /^[•\-\*▪●○◆➤►▸‣]/.test(l) || /^[a-z]/.test(l.charAt(0)) && l.length > 40;
+
+            for (let idx = 0; idx < lines.length; idx++) {
+                const l = lines[idx];
+                if (isHeader(l)) { sec = true; continue; }
+                if (sec && isEndSec(l)) break;
+                if (!sec) { prevLine = l; continue; }
+
+                const dm = isDate(l);
+                if (dm) {
+                    // Date line found — previous line(s) likely have title/company
+                    if (cur) entries.push(cur);
+                    // Look back for title and company
+                    let title = '', company = '';
+                    // Check if prevLine has the company, the line before that has the title
+                    // Or if the title is on the same line as something
+                    const lookback1 = idx > 0 ? lines[idx - 1] : '';
+                    const lookback2 = idx > 1 ? lines[idx - 2] : '';
+                    if (lookback1 && !isHeader(lookback1) && !isEndSec(lookback1) && !isBullet(lookback1)) {
+                        company = lookback1;
+                    }
+                    if (lookback2 && !isHeader(lookback2) && !isEndSec(lookback2) && !isBullet(lookback2) && lookback2 !== company) {
+                        title = lookback2;
+                    }
+                    // If company looks like a title, swap
+                    if (!title && company) { title = company; company = ''; }
+                    // Extract date range
+                    const dateStr = dm[0] || l;
+                    cur = { title: title.trim(), company: company.trim(), dateRange: dateStr.trim(), description: [] };
+                } else if (!cur && !dm) {
+                    // We haven't found a date yet — this might be a title line
+                    // Check if next line has a date
+                    const nextLine = idx + 1 < lines.length ? lines[idx + 1] : '';
+                    const nextNext = idx + 2 < lines.length ? lines[idx + 2] : '';
+                    if (l.includes('—') || l.includes('–') || l.includes(' at ') || l.includes(' @ ')) {
+                        if (cur) entries.push(cur);
+                        const parts = l.split(/\s*[—–]\s*/);
+                        const datePart = isDate(l);
+                        cur = { title: parts[0] || '', company: parts[1] || '', dateRange: datePart ? datePart[0] : (parts[2] || ''), description: [] };
+                    }
+                } else if (cur && isBullet(l)) {
+                    cur.description.push(l.replace(/^[•\-\*▪●○◆➤►▸‣]\s*/, ''));
+                } else if (cur && l.length > 30 && !isDate(l)) {
+                    // Continuation of description without bullet
+                    cur.description.push(l);
+                }
+                prevLine = l;
+            }
+            if (cur) entries.push(cur);
+            // Clean up: remove empty entries
+            return entries.filter(e => e.title || e.company || e.description.length > 0);
+        },
+        // ─ Education ─ (skip "Relevant Coursework" as separate entries)
+        extractEducation(lines) {
             const entries = []; let sec = false; let cur = null;
             for (const l of lines) {
-                if (/^(work\s+)?experience/i.test(l)) { sec = true; continue; }
-                if (sec && /^(education|skills|certif|project|language|interest|reference|hobbies)/i.test(l)) break;
+                if (/^education\b/i.test(l)) { sec = true; continue; }
+                if (sec && /^(experience|work|skills|certif|project|language|interest|reference|key\s+tech)/i.test(l)) break;
                 if (!sec) continue;
-                const dm = l.match(/(\d{4})\s*[-–—to]+\s*(present|\d{4})/i);
-                if (dm || (l.includes('—') || l.includes('–') || l.includes(' at ') || l.includes(' @ '))) {
+                // Skip "Relevant Coursework" as a degree entry
+                if (/^relevant\s+coursework/i.test(l)) {
+                    if (cur) cur.details.push(l);
+                    continue;
+                }
+                if (/bachelor|master|phd|doctor|associate|diploma|degree|b\.?s\.?c|m\.?s\.?c|b\.?a|m\.?a|mba/i.test(l)) {
                     if (cur) entries.push(cur);
-                    const parts = l.split(/\s*[—–\-|]\s*/);
-                    cur = { title: parts[0] || '', company: parts[1] || '', dateRange: dm ? dm[0] : (parts[2] || ''), description: [] };
-                } else if (cur && (l.startsWith('•') || l.startsWith('-') || l.startsWith('*') || l.startsWith('▪'))) {
-                    cur.description.push(l.replace(/^[•\-*▪]\s*/, ''));
+                    cur = { degree: l, details: [] };
+                } else if (cur) {
+                    // Add as details but skip pure date lines
+                    cur.details.push(l);
                 }
             }
             if (cur) entries.push(cur);
             return entries;
         },
-        extractEducation(lines) {
-            const entries = []; let sec = false; let cur = null;
-            for (const l of lines) {
-                if (/^education/i.test(l)) { sec = true; continue; }
-                if (sec && /^(experience|skills|certif|project|language|interest|reference)/i.test(l)) break;
-                if (!sec) continue;
-                if (/bachelor|master|phd|doctor|associate|diploma|degree|b\.?s\.?c|m\.?s\.?c|b\.?a|m\.?a|mba/i.test(l)) {
-                    if (cur) entries.push(cur);
-                    cur = { degree: l, details: [] };
-                } else if (cur) { cur.details.push(l); }
-            }
-            if (cur) entries.push(cur);
-            return entries;
-        },
+        // ─ Contact ─
         extractContact(text) {
             const email = text.match(/[\w.+-]+@[\w-]+\.[\w.]+/);
             const phone = text.match(/(?:\+?\d{1,3}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}/);
             return { email: email ? email[0] : null, phone: phone ? phone[0] : null };
         },
+        // ─ Summary ─ (handles PROFESSIONAL SUMMARY, CAREER SUMMARY, etc)
         extractSummary(lines) {
             let sec = false; const parts = [];
             for (const l of lines) {
-                if (/^(summary|objective|about|profile)\b/i.test(l)) { sec = true; continue; }
-                if (sec && /^(experience|education|skills|work|project|certif)/i.test(l)) break;
+                if (/^(professional\s+)?summary\b|^(career\s+)?objective\b|^about(\s+me)?\b|^(professional\s+)?profile\b/i.test(l)) { sec = true; continue; }
+                if (sec && /^(experience|education|skills|work|project|certif|technical|expertise)/i.test(l)) break;
                 if (sec) parts.push(l);
             }
             return parts.join(' ').trim() || null;
         },
+        // ─ Languages ─ (handles "LANGUAGES & CORE COMPETENCIES")
         extractLanguages(text, lines) {
-            const langs = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Mandarin', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Russian', 'Dutch', 'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Polish', 'Turkish', 'Hebrew', 'Thai', 'Vietnamese', 'Indonesian', 'Malay', 'Tagalog', 'Swahili', 'Urdu', 'Bengali', 'Punjabi', 'Persian', 'Greek', 'Czech', 'Romanian', 'Hungarian', 'Ukrainian'];
+            const langs = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Mandarin', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Russian', 'Dutch', 'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Polish', 'Turkish', 'Hebrew', 'Thai', 'Vietnamese', 'Indonesian', 'Malay', 'Tagalog', 'Swahili', 'Urdu', 'Bengali', 'Punjabi', 'Persian', 'Greek', 'Czech', 'Romanian', 'Hungarian', 'Ukrainian', 'Berber', 'Amazigh'];
             const found = [];
             let sec = false;
             for (const l of lines) {
                 if (/^languages?\b/i.test(l)) { sec = true; continue; }
-                if (sec && /^(experience|education|skills|certif|project|interest)/i.test(l)) break;
+                if (sec && /^(experience|education|skills|certif|project|interest|work|technical)/i.test(l)) break;
                 if (sec) { for (const lang of langs) { if (l.toLowerCase().includes(lang.toLowerCase()) && !found.includes(lang)) found.push(lang); } }
             }
-            if (found.length === 0) { for (const lang of langs) { const r = new RegExp(`\\b${lang}\\b`, 'i'); if (r.test(text) && !found.includes(lang)) found.push(lang); } }
+            // Fallback: search in labeled lines like "Languages: English, French"
+            if (found.length === 0) {
+                const langLine = text.match(/languages?\s*[:]\s*(.+)/i);
+                if (langLine) {
+                    for (const lang of langs) {
+                        if (langLine[1].toLowerCase().includes(lang.toLowerCase()) && !found.includes(lang)) found.push(lang);
+                    }
+                }
+            }
+            // Final fallback: full text search
+            if (found.length === 0) {
+                for (const lang of langs) { const r = new RegExp(`\\b${lang}\\b`, 'i'); if (r.test(text) && !found.includes(lang)) found.push(lang); }
+            }
             return found;
+        },
+        // ─ LinkedIn ─
+        extractLinkedIn(text) {
+            const m = text.match(/linkedin\.com\/in\/[\w-]+\/?/i);
+            return m ? m[0] : null;
+        },
+        // ─ Website ─
+        extractWebsite(text) {
+            const m = text.match(/(?:portfolio|website|site)\s*[:]\s*(https?:\/\/\S+|[\w.-]+\.\w{2,})/i);
+            if (m) return m[1];
+            // Try to find any .app, .io, .dev, .com URL that isn't linkedin/github
+            const urls = text.match(/[\w-]+\.(?:netlify\.app|vercel\.app|github\.io|herokuapp\.com|[\w]+\.dev)/gi);
+            return urls ? urls[0] : null;
+        },
+        // ─ Certifications ─
+        extractCertifications(lines) {
+            const certs = []; let sec = false;
+            for (const l of lines) {
+                if (/^certif/i.test(l)) { sec = true; continue; }
+                if (sec && /^(experience|education|skills|project|language|interest|work|technical)/i.test(l)) break;
+                if (sec && l.length > 3) {
+                    certs.push(l.replace(/^[-•▪*]\s*/, '').trim());
+                }
+            }
+            return certs;
         }
     };
 
@@ -249,6 +404,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (p.contact.email) profile.email = p.contact.email;
         if (p.contact.phone) profile.phone = p.contact.phone;
         if (p.summary) profile.summary = p.summary;
+        if (p.linkedin) profile.linkedin = p.linkedin;
+        if (p.website) profile.website = p.website;
+        if (p.certifications && p.certifications.length) profile.certifications = p.certifications;
         if (p.skills.length) {
             const ex = new Set((profile.skills).map(s => s.toLowerCase()));
             for (const s of p.skills) { if (!ex.has(s.toLowerCase())) { profile.skills.push(s); ex.add(s.toLowerCase()); } }
@@ -273,8 +431,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const items = [];
         if (p.name) items.push('name');
         if (p.title) items.push('title');
+        if (p.summary) items.push('summary');
         if (p.skills.length) items.push(`${p.skills.length} skills`);
         if (p.experience.length) items.push(`${p.experience.length} jobs`);
+        if (p.education.length) items.push(`${p.education.length} education`);
+        if (p.languages.length) items.push(`${p.languages.length} languages`);
+        if (p.certifications && p.certifications.length) items.push(`${p.certifications.length} certifications`);
         toast(`✅ Detected: ${items.join(', ')}. Review & edit below!`, 'success');
     }
 
@@ -293,8 +455,11 @@ document.addEventListener('DOMContentLoaded', () => {
             { icon: '🛠️', label: 'Skills', value: `${p.skills.length} found`, ok: p.skills.length > 0 },
             { icon: '💼', label: 'Experience', value: `${p.experience.length} entries`, ok: p.experience.length > 0 },
             { icon: '🎓', label: 'Education', value: `${p.education.length} entries`, ok: p.education.length > 0 },
+            { icon: '🌍', label: 'Languages', value: p.languages.length ? p.languages.join(', ') : null, ok: p.languages.length > 0 },
+            { icon: '🔗', label: 'LinkedIn', value: p.linkedin, ok: !!p.linkedin },
+            { icon: '🌐', label: 'Website', value: p.website, ok: !!p.website },
         ];
-        if (p.languages.length) fields.push({ icon: '🌍', label: 'Languages', value: p.languages.join(', '), ok: true });
+        if (p.certifications && p.certifications.length) fields.push({ icon: '📜', label: 'Certifications', value: `${p.certifications.length} found`, ok: true });
 
         const okCount = fields.filter(f => f.ok).length;
         document.getElementById('detBadge').textContent = `${okCount}/${fields.length} detected`;
