@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMatch AI — Dashboard</title>
+    <meta name="description"
+        content="Upload your CV, extract skills, and see your profile dashboard — all in your browser.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- ═══ Sidebar ═══ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">
+                    <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                        <rect width="28" height="28" rx="8" fill="url(#sGrad)" />
+                        <path d="M8 11h12v2H8zm0 4h8v2H8zm4-8h4v2h-4z" fill="white" opacity="0.9" />
+                        <circle cx="20" cy="20" r="4" fill="white" opacity="0.3" />
+                        <circle cx="20" cy="20" r="2" fill="white" opacity="0.9" />
+                        <defs>
+                            <linearGradient id="sGrad" x1="0" y1="0" x2="28" y2="28">
+                                <stop stop-color="#6366F1" />
+                                <stop offset="1" stop-color="#8B5CF6" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>JobMatch <span class="accent">AI</span></span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="sidebar-link active" data-panel="dashboard">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    Dashboard
+                </button>
+                <button class="sidebar-link" data-panel="upload">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Upload CV
+                </button>
+                <button class="sidebar-link" data-panel="profile">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Profile
+                </button>
+                <button class="sidebar-link" data-panel="skills">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                    </svg>
+                    Skills
+                </button>
+                <button class="sidebar-link" data-panel="experience">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" />
+                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                    </svg>
+                    Experience
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="index.html" class="sidebar-back">← Back to Home</a>
+                <a href="https://github.com/Virus-101/JobMatch" target="_blank" class="sidebar-github">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </aside>
+
+        <!-- ═══ Main Content ═══ -->
+        <main class="main-content" id="mainContent">
+
+            <!-- ── Dashboard Panel ── -->
+            <section class="panel active" id="panel-dashboard">
+                <div class="panel-header">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p class="panel-subtitle">Your career profile at a glance</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="switchPanel('upload')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Upload CV
+                    </button>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(99,102,241,0.12); color: #818CF8;">📄</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="dStatFields">0</span>
+                            <span class="stat-label">Fields Detected</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(16,185,129,0.12); color: #10B981;">🛠️</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="dStatSkills">0</span>
+                            <span class="stat-label">Skills Found</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(139,92,246,0.12); color: #8B5CF6;">💼</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="dStatExp">0</span>
+                            <span class="stat-label">Experience</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(245,158,11,0.12); color: #F59E0B;">🎓</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="dStatEdu">0</span>
+                            <span class="stat-label">Education</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Completion -->
+                <div class="dash-row">
+                    <div class="dash-card dash-card-wide">
+                        <div class="dash-card-header">
+                            <h3>Profile Completion</h3>
+                            <span class="badge" id="dCompBadge">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="dCompBar" style="width:0%"></div>
+                        </div>
+                        <p class="dash-hint" id="dCompHint">Upload your CV to get started!</p>
+                    </div>
+                </div>
+
+                <!-- Quick Profile + Detected Fields -->
+                <div class="dash-row">
+                    <div class="dash-card">
+                        <h3>👤 Quick Profile</h3>
+                        <div class="quick-profile" id="dQuickProfile">
+                            <div class="qp-empty">
+                                <span>📄</span>
+                                <p>No profile data yet.<br>Upload your CV to auto-detect everything.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <h3>🎯 Detection Summary</h3>
+                        <div class="detection-list" id="dDetection">
+                            <div class="qp-empty">
+                                <span>🔍</span>
+                                <p>Upload a CV to see<br>what we can detect.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills Preview -->
+                <div class="dash-row">
+                    <div class="dash-card dash-card-wide">
+                        <div class="dash-card-header">
+                            <h3>🛠️ Top Skills</h3>
+                            <button class="link-btn" onclick="switchPanel('skills')">View all →</button>
+                        </div>
+                        <div class="skills-preview" id="dSkillsPreview">
+                            <p class="dash-empty-text">No skills detected yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Upload CV Panel ── -->
+            <section class="panel" id="panel-upload">
+                <div class="panel-header">
+                    <div>
+                        <h1>Upload Your CV</h1>
+                        <p class="panel-subtitle">Upload a PDF, DOCX, or paste text. We'll extract everything
+                            automatically.</p>
+                    </div>
+                </div>
+
+                <div class="upload-area">
+                    <!-- Drop zone -->
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.rtf" hidden>
+                        <div class="drop-zone-inner" id="dropZoneInner">
+                            <div class="drop-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <h3>Drag & drop your CV here</h3>
+                            <p>or <button class="browse-btn" id="btnBrowse">browse files</button></p>
+                            <span class="drop-formats">PDF, DOCX, TXT — Max 10MB</span>
+                        </div>
+                        <!-- File info when uploaded -->
+                        <div class="file-info-bar" id="fileInfoBar" style="display:none;">
+                            <span class="file-emoji" id="fIcon">📕</span>
+                            <div class="file-meta">
+                                <strong id="fName">resume.pdf</strong>
+                                <span id="fSize">245 KB</span>
+                            </div>
+                            <button class="file-remove" id="btnRemoveFile">✕</button>
+                        </div>
+                    </div>
+
+                    <!-- Processing -->
+                    <div class="processing-bar" id="processingBar" style="display:none;">
+                        <div class="spinner"></div>
+                        <span>Extracting text from your CV...</span>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="or-divider"><span>or paste text directly</span></div>
+
+                    <!-- Textarea -->
+                    <textarea id="cvText" class="cv-textarea" rows="8"
+                        placeholder="Paste your CV/resume text here..."></textarea>
+
+                    <button class="btn btn-primary btn-lg btn-full" id="btnParse">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        🔍 Detect & Extract Everything
+                    </button>
+                </div>
+
+                <!-- Detection Results (shown after parse) -->
+                <div class="detection-results" id="detectionResults" style="display:none;">
+                    <div class="detection-header">
+                        <h3>🎯 Detection Results</h3>
+                        <span class="badge badge-success" id="detBadge">0/0</span>
+                    </div>
+                    <div class="detection-grid" id="detGrid"></div>
+                    <button class="btn btn-primary" onclick="switchPanel('profile')" style="margin-top:16px;">
+                        Review & Edit Profile →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ── Profile Panel ── -->
+            <section class="panel" id="panel-profile">
+                <div class="panel-header">
+                    <div>
+                        <h1>Your Profile</h1>
+                        <p class="panel-subtitle">Review and edit your auto-detected information</p>
+                    </div>
+                    <button class="btn btn-primary" id="btnSaveProfile">💾 Save Profile</button>
+                </div>
+
+                <div class="profile-grid">
+                    <div class="form-card">
+                        <h3>👤 Personal Information</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Full Name</label><input type="text" id="pName" class="input"
+                                    placeholder="John Doe"></div>
+                            <div class="form-group"><label>Email</label><input type="email" id="pEmail" class="input"
+                                    placeholder="john@example.com"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Phone</label><input type="tel" id="pPhone" class="input"
+                                    placeholder="+1 234 567 890"></div>
+                            <div class="form-group"><label>Location</label><input type="text" id="pLocation"
+                                    class="input" placeholder="New York, NY"></div>
+                        </div>
+                        <div class="form-group full-w"><label>Job Title</label><input type="text" id="pTitle"
+                                class="input" placeholder="Senior Software Engineer"></div>
+                        <div class="form-group full-w"><label>Professional Summary</label><textarea id="pSummary"
+                                class="input textarea-input" rows="3" placeholder="Brief summary..."></textarea></div>
+                    </div>
+
+                    <div class="form-card">
+                        <h3>🌍 Languages</h3>
+                        <div class="tags-wrap" id="langTags"></div>
+                        <div class="tag-input-row">
+                            <input type="text" id="langInput" class="input" placeholder="e.g. English, Spanish...">
+                            <button class="btn btn-sm" id="btnAddLang">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Skills Panel ── -->
+            <section class="panel" id="panel-skills">
+                <div class="panel-header">
+                    <div>
+                        <h1>Skills</h1>
+                        <p class="panel-subtitle">Your detected and added skills</p>
+                    </div>
+                    <span class="badge badge-lg" id="skillCountBadge">0 skills</span>
+                </div>
+                <div class="form-card">
+                    <div class="tags-wrap tags-wrap-lg" id="skillTags"></div>
+                    <div class="tag-input-row">
+                        <input type="text" id="skillInput" class="input" placeholder="Type a skill and press Enter...">
+                        <button class="btn btn-sm" id="btnAddSkill">Add</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Experience Panel ── -->
+            <section class="panel" id="panel-experience">
+                <div class="panel-header">
+                    <div>
+                        <h1>Experience & Education</h1>
+                        <p class="panel-subtitle">Your career timeline</p>
+                    </div>
+                </div>
+
+                <div class="timeline-section">
+                    <div class="form-card">
+                        <div class="dash-card-header">
+                            <h3>💼 Work Experience</h3>
+                            <span class="badge" id="expBadge">0</span>
+                        </div>
+                        <div id="expList" class="timeline-list">
+                            <div class="timeline-empty">
+                                <p>No experience detected yet. Upload your CV.</p>
+                            </div>
+                        </div>
+                        <button class="btn-add" id="btnAddExp">+ Add Experience</button>
+                    </div>
+
+                    <div class="form-card">
+                        <div class="dash-card-header">
+                            <h3>🎓 Education</h3>
+                            <span class="badge" id="eduBadge">0</span>
+                        </div>
+                        <div id="eduList" class="timeline-list">
+                            <div class="timeline-empty">
+                                <p>No education detected yet. Upload your CV.</p>
+                            </div>
+                        </div>
+                        <button class="btn-add" id="btnAddEdu">+ Add Education</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
