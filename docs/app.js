@@ -352,7 +352,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
                             const tc = await page.getTextContent();
-                            parts.push(tc.items.map(x => x.str).join(' '));
+                            // Reconstruct lines using Y-position and hasEOL
+                            const pageLines = [];
+                            let currentLine = '';
+                            let lastY = null;
+                            for (const item of tc.items) {
+                                if (item.str === undefined) continue;
+                                const y = item.transform ? item.transform[5] : null;
+                                // Detect line break: Y changed significantly or hasEOL flag
+                                if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
+                                    if (currentLine.trim()) pageLines.push(currentLine.trim());
+                                    currentLine = '';
+                                }
+                                if (item.hasEOL && currentLine.trim()) {
+                                    currentLine += item.str;
+                                    pageLines.push(currentLine.trim());
+                                    currentLine = '';
+                                    lastY = y;
+                                    continue;
+                                }
+                                currentLine += item.str;
+                                lastY = y;
+                            }
+                            if (currentLine.trim()) pageLines.push(currentLine.trim());
+                            parts.push(pageLines.join('\n'));
                         }
                         text = parts.join('\n\n');
                     } catch (pdfErr) {
