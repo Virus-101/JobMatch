@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMatch AI — Smart Job Matching Browser Extension</title>
+    <meta name="description"
+        content="Score, save, and track jobs automatically based on your CV and preferences. Upload your resume and let AI match you with the best opportunities.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- ═══ Navigation ═══ -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner container">
+            <a href="#" class="nav-logo">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect width="28" height="28" rx="8" fill="url(#navGrad)" />
+                    <path d="M8 11h12v2H8zm0 4h8v2H8zm4-8h4v2h-4z" fill="white" opacity="0.9" />
+                    <circle cx="20" cy="20" r="4" fill="white" opacity="0.3" />
+                    <circle cx="20" cy="20" r="2" fill="white" opacity="0.9" />
+                    <defs>
+                        <linearGradient id="navGrad" x1="0" y1="0" x2="28" y2="28">
+                            <stop stop-color="#6366F1" />
+                            <stop offset="1" stop-color="#8B5CF6" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>JobMatch <span class="accent">AI</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#scoring">Scoring</a>
+                <a href="https://github.com/Virus-101/JobMatch" class="btn btn-sm" target="_blank">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══ Hero Section ═══ -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+            <div class="hero-orb hero-orb-3"></div>
+            <div class="hero-grid"></div>
+        </div>
+        <div class="container hero-content">
+            <div class="hero-badge">🚀 Open Source Chrome Extension</div>
+            <h1 class="hero-title">
+                Your CV.<br>
+                <span class="gradient-text">Matched to Jobs.</span><br>
+                Automatically.
+            </h1>
+            <p class="hero-subtitle">
+                Upload your resume as <strong>PDF, DOCX, or text</strong>. JobMatch AI extracts your skills,
+                experience & preferences — then scores every job listing you see in real-time.
+            </p>
+            <div class="hero-actions">
+                <a href="https://github.com/Virus-101/JobMatch" class="btn btn-primary btn-lg" target="_blank">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Install from GitHub
+                </a>
+                <a href="#how-it-works" class="btn btn-outline btn-lg">
+                    See How It Works →
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span class="hero-stat-num">6</span>
+                    <span class="hero-stat-label">Matching Factors</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num">5</span>
+                    <span class="hero-stat-label">Job Sites</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num">100%</span>
+                    <span class="hero-stat-label">Private & Local</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Features Grid ═══ -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Features</span>
+                <h2>Everything You Need to<br><span class="gradient-text">Land Your Dream Job</span></h2>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card feature-card-lg">
+                    <div class="feature-icon">📄</div>
+                    <h3>Smart CV Upload</h3>
+                    <p>Upload <strong>PDF, DOCX, or paste text</strong>. Our parser extracts your name, title, skills,
+                        experience, education, languages — automatically.</p>
+                    <div class="feature-tag">Drag & Drop</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Real-Time Scoring</h3>
+                    <p>Every job listing gets a <strong>0-100 match score</strong> based on your CV and preferences. See
+                        it right on the page.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💼</div>
+                    <h3>Job Tracking</h3>
+                    <p>Save, organize, and track applications through <strong>Saved → Applied → Interview →
+                            Offer</strong> pipeline.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% Private</h3>
+                    <p>All data stays in your browser. <strong>No server, no tracking, no data sharing</strong>. Period.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Multi-Platform</h3>
+                    <p>Works on <strong>LinkedIn, Indeed, Glassdoor, Monster</strong>, and ZipRecruiter. More coming
+                        soon.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Instant Detection</h3>
+                    <p>Auto-detects job listings as you scroll. <strong>No clicking required</strong> — scores appear
+                        automatically.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ How It Works — Flow Diagram ═══ -->
+    <section class="section section-dark" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">How It Works</span>
+                <h2>From CV Upload to<br><span class="gradient-text">Dream Job Match</span></h2>
+                <p class="section-desc">Three simple steps. No account needed. Everything happens in your browser.</p>
+            </div>
+
+            <!-- Flow Diagram -->
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-card">
+                        <div class="flow-card-icon">📤</div>
+                        <h4>Upload Your CV</h4>
+                        <p>Drag & drop a PDF/DOCX or paste text. The parser extracts everything automatically.</p>
+                        <div class="flow-extracted">
+                            <span class="flow-chip">👤 Name</span>
+                            <span class="flow-chip">💼 Title</span>
+                            <span class="flow-chip">🛠️ Skills</span>
+                            <span class="flow-chip">📧 Email</span>
+                            <span class="flow-chip">📍 Location</span>
+                            <span class="flow-chip">💼 Experience</span>
+                            <span class="flow-chip">🎓 Education</span>
+                            <span class="flow-chip">🌍 Languages</span>
+                        </div>
+                    </div>
+                    <div class="flow-arrow">
+                        <svg width="24" height="60" viewBox="0 0 24 60">
+                            <path d="M12 0v50m-8-8l8 8 8-8" stroke="currentColor" stroke-width="2" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-card">
+                        <div class="flow-card-icon">⚙️</div>
+                        <h4>Set Preferences</h4>
+                        <p>Define what you're looking for: job titles, locations, salary range, remote work, keywords.
+                        </p>
+                        <div class="flow-prefs">
+                            <div class="flow-pref-item">🎯 Desired Titles</div>
+                            <div class="flow-pref-item">📍 Preferred Locations</div>
+                            <div class="flow-pref-item">💰 Salary Range</div>
+                            <div class="flow-pref-item">🏠 Remote Only</div>
+                            <div class="flow-pref-item">✅ Must-Have Keywords</div>
+                            <div class="flow-pref-item">🚫 Exclude Keywords</div>
+                        </div>
+                    </div>
+                    <div class="flow-arrow">
+                        <svg width="24" height="60" viewBox="0 0 24 60">
+                            <path d="M12 0v50m-8-8l8 8 8-8" stroke="currentColor" stroke-width="2" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-card">
+                        <div class="flow-card-icon">🎉</div>
+                        <h4>Browse & Match</h4>
+                        <p>Visit any supported job site. Every listing gets an instant match score badge.</p>
+                        <div class="flow-result">
+                            <div class="flow-score-demo">
+                                <div class="flow-score-badge score-excellent">92</div>
+                                <div class="flow-score-info">
+                                    <strong>Senior Frontend Developer</strong>
+                                    <span>TechCorp — San Francisco, CA</span>
+                                    <div class="flow-score-skills">
+                                        <span class="skill-match">React</span>
+                                        <span class="skill-match">TypeScript</span>
+                                        <span class="skill-match">Node.js</span>
+                                        <span class="skill-miss">Go</span>
+                                    </div>
+                                </div>
+                                <button class="flow-save-btn">💾 Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Architecture Diagram ═══ -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Architecture</span>
+                <h2>Extension<br><span class="gradient-text">Architecture Diagram</span></h2>
+                <p class="section-desc">A Chrome Extension built with Manifest V3. Everything runs locally in your
+                    browser.</p>
+            </div>
+
+            <div class="arch-diagram">
+                <!-- Top: User Input Layer -->
+                <div class="arch-layer">
+                    <div class="arch-layer-label">User Input</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box arch-input">
+                            <div class="arch-box-icon">📄</div>
+                            <div class="arch-box-title">CV Upload</div>
+                            <div class="arch-box-desc">PDF / DOCX / Text</div>
+                        </div>
+                        <div class="arch-box arch-input">
+                            <div class="arch-box-icon">⚙️</div>
+                            <div class="arch-box-title">Preferences</div>
+                            <div class="arch-box-desc">Titles, Location, Salary</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arch-connector">
+                    <svg width="100%" height="40" viewBox="0 0 600 40" preserveAspectRatio="none">
+                        <path d="M150 0 L150 20 L300 20 L300 40 M450 0 L450 20 L300 20" stroke="var(--primary)"
+                            stroke-width="2" fill="none" stroke-dasharray="6,4" />
+                    </svg>
+                </div>
+
+                <!-- Middle: Processing Layer -->
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Processing Engine</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box arch-process">
+                            <div class="arch-box-icon">🔍</div>
+                            <div class="arch-box-title">CV Parser</div>
+                            <div class="arch-box-desc">Regex + NLP patterns</div>
+                            <div class="arch-box-files">cv-parser.js<br>file-parser.js</div>
+                        </div>
+                        <div class="arch-box arch-process arch-box-primary">
+                            <div class="arch-box-icon">🧠</div>
+                            <div class="arch-box-title">Matching Engine</div>
+                            <div class="arch-box-desc">Weighted multi-factor scoring</div>
+                            <div class="arch-box-files">job-matcher.js</div>
+                        </div>
+                        <div class="arch-box arch-process">
+                            <div class="arch-box-icon">💾</div>
+                            <div class="arch-box-title">Storage</div>
+                            <div class="arch-box-desc">Chrome Storage API</div>
+                            <div class="arch-box-files">storage.js</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arch-connector">
+                    <svg width="100%" height="40" viewBox="0 0 600 40" preserveAspectRatio="none">
+                        <path d="M100 0 L100 20 L300 20 L300 40 M300 0 L300 20 M500 0 L500 20 L300 20"
+                            stroke="var(--primary)" stroke-width="2" fill="none" stroke-dasharray="6,4" />
+                    </svg>
+                </div>
+
+                <!-- Bottom: Extension Layers -->
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Chrome Extension Layers</div>
+                    <div class="arch-boxes arch-boxes-3">
+                        <div class="arch-box arch-ext">
+                            <div class="arch-box-icon">🖼️</div>
+                            <div class="arch-box-title">Popup UI</div>
+                            <div class="arch-box-desc">Dashboard, Profile, Jobs, Prefs</div>
+                            <div class="arch-box-files">popup.html/css/js</div>
+                        </div>
+                        <div class="arch-box arch-ext">
+                            <div class="arch-box-icon">📝</div>
+                            <div class="arch-box-title">Content Script</div>
+                            <div class="arch-box-desc">Injects badges on job sites</div>
+                            <div class="arch-box-files">content.js/css</div>
+                        </div>
+                        <div class="arch-box arch-ext">
+                            <div class="arch-box-icon">⚡</div>
+                            <div class="arch-box-title">Background Worker</div>
+                            <div class="arch-box-desc">Install, messaging, context menu</div>
+                            <div class="arch-box-files">background.js</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arch-connector">
+                    <svg width="100%" height="40" viewBox="0 0 600 40" preserveAspectRatio="none">
+                        <path d="M300 0 L300 20 M100 40 L100 20 L500 20 L500 40" stroke="var(--accent)" stroke-width="2"
+                            fill="none" stroke-dasharray="6,4" />
+                    </svg>
+                </div>
+
+                <!-- Target Sites -->
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Supported Job Sites</div>
+                    <div class="arch-sites">
+                        <div class="arch-site">LinkedIn</div>
+                        <div class="arch-site">Indeed</div>
+                        <div class="arch-site">Glassdoor</div>
+                        <div class="arch-site">Monster</div>
+                        <div class="arch-site">ZipRecruiter</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Scoring Algorithm ═══ -->
+    <section class="section section-dark" id="scoring">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Scoring Algorithm</span>
+                <h2>How Jobs Are<br><span class="gradient-text">Scored & Ranked</span></h2>
+                <p class="section-desc">A weighted multi-factor algorithm that scores each job from 0 to 100.</p>
+            </div>
+
+            <div class="scoring-diagram">
+                <div class="scoring-center">
+                    <div class="scoring-total">
+                        <span class="scoring-total-num">100</span>
+                        <span class="scoring-total-label">Max Score</span>
+                    </div>
+                </div>
+
+                <div class="scoring-factors">
+                    <div class="scoring-factor" style="--factor-color: #6366F1; --factor-width: 35%;">
+                        <div class="scoring-factor-header">
+                            <span class="scoring-factor-icon">🛠️</span>
+                            <span class="scoring-factor-name">Skills Match</span>
+                            <span class="scoring-factor-weight">35%</span>
+                        </div>
+                        <div class="scoring-factor-bar">
+                            <div class="scoring-factor-fill"></div>
+                        </div>
+                        <p class="scoring-factor-desc">Compares your skills against job requirements. Fuzzy matching
+                            handles variations like "JS" vs "JavaScript".</p>
+                    </div>
+
+                    <div class="scoring-factor" style="--factor-color: #8B5CF6; --factor-width: 25%;">
+                        <div class="scoring-factor-header">
+                            <span class="scoring-factor-icon">💼</span>
+                            <span class="scoring-factor-name">Title Match</span>
+                            <span class="scoring-factor-weight">25%</span>
+                        </div>
+                        <div class="scoring-factor-bar">
+                            <div class="scoring-factor-fill"></div>
+                        </div>
+                        <p class="scoring-factor-desc">How well the job title matches your current/desired titles.
+                            Handles seniority levels and title synonyms.</p>
+                    </div>
+
+                    <div class="scoring-factor" style="--factor-color: #EC4899; --factor-width: 15%;">
+                        <div class="scoring-factor-header">
+                            <span class="scoring-factor-icon">📍</span>
+                            <span class="scoring-factor-name">Location</span>
+                            <span class="scoring-factor-weight">15%</span>
+                        </div>
+                        <div class="scoring-factor-bar">
+                            <div class="scoring-factor-fill"></div>
+                        </div>
+                        <p class="scoring-factor-desc">Matches preferred cities, states, and remote work preference.</p>
+                    </div>
+
+                    <div class="scoring-factor" style="--factor-color: #F59E0B; --factor-width: 10%;">
+                        <div class="scoring-factor-header">
+                            <span class="scoring-factor-icon">📊</span>
+                            <span class="scoring-factor-name">Experience</span>
+                            <span class="scoring-factor-weight">10%</span>
+                        </div>
+                        <div class="scoring-factor-bar">
+                            <div class="scoring-factor-fill"></div>
+                        </div>
+                        <p class="scoring-factor-desc">Compares your years of experience with the job's requirements.
+                        </p>
+                    </div>
+
+                    <div class="scoring-factor" style="--factor-color: #10B981; --factor-width: 10%;">
+                        <div class="scoring-factor-header">
+                            <span class="scoring-factor-icon">🔑</span>
+                            <span class="scoring-factor-name">Keywords</span>
+                            <span class="scoring-factor-weight">10%</span>
+                        </div>
+                        <div class="scoring-factor-bar">
+                            <div class="scoring-factor-fill"></div>
+                        </div>
+                        <p class="scoring-factor-desc">Must-have and exclude keywords boost or penalize the score.</p>
+                    </div>
+
+                    <div class="scoring-factor" style="--factor-color: #3B82F6; --factor-width: 5%;">
+                        <div class="scoring-factor-header">
+                            <span class="scoring-factor-icon">💰</span>
+                            <span class="scoring-factor-name">Salary</span>
+                            <span class="scoring-factor-weight">5%</span>
+                        </div>
+                        <div class="scoring-factor-bar">
+                            <div class="scoring-factor-fill"></div>
+                        </div>
+                        <p class="scoring-factor-desc">Checks if the listed salary fits within your desired range.</p>
+                    </div>
+                </div>
+
+                <!-- Score levels -->
+                <div class="score-levels">
+                    <div class="score-level">
+                        <div class="score-dot" style="background: linear-gradient(135deg, #10B981, #059669);"></div>
+                        <span>85-100</span> Excellent Match
+                    </div>
+                    <div class="score-level">
+                        <div class="score-dot" style="background: linear-gradient(135deg, #6366F1, #4F46E5);"></div>
+                        <span>70-84</span> Great Match
+                    </div>
+                    <div class="score-level">
+                        <div class="score-dot" style="background: linear-gradient(135deg, #3B82F6, #2563EB);"></div>
+                        <span>55-69</span> Good Match
+                    </div>
+                    <div class="score-level">
+                        <div class="score-dot" style="background: linear-gradient(135deg, #F59E0B, #D97706);"></div>
+                        <span>40-54</span> Fair Match
+                    </div>
+                    <div class="score-level">
+                        <div class="score-dot" style="background: linear-gradient(135deg, #EF4444, #DC2626);"></div>
+                        <span>0-39</span> Low Match
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ CV Parser Flow ═══ -->
+    <section class="section" id="parser">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">CV Parser</span>
+                <h2>What Gets<br><span class="gradient-text">Extracted From Your CV</span></h2>
+            </div>
+
+            <div class="parser-diagram">
+                <div class="parser-input">
+                    <div class="parser-input-header">📄 Your CV (PDF / DOCX / Text)</div>
+                    <div class="parser-input-body">
+                        <code>John Doe
+Senior Software Engineer
+San Francisco, CA
+john@gmail.com | +1 415-555-0123
+
+Skills: JavaScript, React, Node.js, Python, Docker
+
+Experience:
+Senior Developer — Google — 2020 - Present
+• Led team of 5 engineers
+...</code>
+                    </div>
+                </div>
+
+                <div class="parser-arrow-big">
+                    <div class="parser-arrow-label">CV Parser Engine</div>
+                    <svg width="40" height="60" viewBox="0 0 40 60">
+                        <path d="M20 0v50m-12-10l12 10 12-10" stroke="currentColor" stroke-width="2.5" fill="none"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+
+                <div class="parser-output-grid">
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">👤</span>
+                        <span class="parser-field-label">Name</span>
+                        <span class="parser-field-value">John Doe</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">💼</span>
+                        <span class="parser-field-label">Title</span>
+                        <span class="parser-field-value">Senior Software Engineer</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">📧</span>
+                        <span class="parser-field-label">Email</span>
+                        <span class="parser-field-value">john@gmail.com</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">📱</span>
+                        <span class="parser-field-label">Phone</span>
+                        <span class="parser-field-value">+1 415-555-0123</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">📍</span>
+                        <span class="parser-field-label">Location</span>
+                        <span class="parser-field-value">San Francisco, CA</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">🛠️</span>
+                        <span class="parser-field-label">Skills</span>
+                        <span class="parser-field-value">JavaScript, React, Node.js, Python, Docker</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">💼</span>
+                        <span class="parser-field-label">Experience</span>
+                        <span class="parser-field-value">Senior Developer @ Google (2020–Present)</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">🎓</span>
+                        <span class="parser-field-label">Education</span>
+                        <span class="parser-field-value">BSc Computer Science</span>
+                    </div>
+                    <div class="parser-output-item detected">
+                        <span class="parser-field-icon">🌍</span>
+                        <span class="parser-field-label">Languages</span>
+                        <span class="parser-field-value">English, Spanish</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Installation CTA ═══ -->
+    <section class="section section-dark" id="install">
+        <div class="container">
+            <div class="cta-card">
+                <h2>Ready to Match?</h2>
+                <p>Install JobMatch AI in 30 seconds. No account needed.</p>
+                <div class="install-steps">
+                    <div class="install-step">
+                        <div class="install-step-num">1</div>
+                        <p>Clone or download from <a href="https://github.com/Virus-101/JobMatch"
+                                target="_blank">GitHub</a></p>
+                    </div>
+                    <div class="install-step">
+                        <div class="install-step-num">2</div>
+                        <p>Open <code>chrome://extensions</code> → Enable Developer Mode</p>
+                    </div>
+                    <div class="install-step">
+                        <div class="install-step-num">3</div>
+                        <p>Click <strong>Load Unpacked</strong> → Select the folder</p>
+                    </div>
+                </div>
+                <a href="https://github.com/Virus-101/JobMatch" class="btn btn-primary btn-lg" target="_blank">
+                    Get JobMatch AI →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div class="footer-left">
+                <span class="footer-logo">JobMatch <span class="accent">AI</span></span>
+                <p>Open-source job matching extension.</p>
+            </div>
+            <div class="footer-right">
+                <a href="https://github.com/Virus-101/JobMatch" target="_blank">GitHub</a>
+                <a href="#features">Features</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#scoring">Scoring</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>© 2026 JobMatch AI. Built with ❤️ — All data stays in your browser.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll-triggered animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.feature-card, .flow-step, .arch-box, .scoring-factor, .parser-output-item, .install-step').forEach(el => {
+            el.classList.add('animate-in');
+            observer.observe(el);
+        });
+
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            document.getElementById('nav').classList.toggle('nav-scrolled', window.scrollY > 50);
+        });
+
+        // Scoring bar animation
+        const barObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelector('.scoring-factor-fill').style.width = entry.target.style.getPropertyValue('--factor-width');
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.scoring-factor').forEach(el => barObserver.observe(el));
+    </script>
+</body>
+
+</html>
