@@ -150,62 +150,110 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return found;
         },
-        // ─ Experience ─ (handles multi-line title/company)
+        // ─ Experience ─ (robust: handles PROFESSIONAL EXPERIENCE, multi-line entries)
         extractExperience(lines) {
-            const entries = []; let sec = false; let cur = null; let prevLine = '';
-            const isHeader = l => /^(work\s+)?experience\b/i.test(l);
+            // Match all common experience section headers
+            const isHeader = l => /^(professional\s+|work\s+|relevant\s+|career\s+)?experience\b/i.test(l);
             const isEndSec = l => /^(education|skills|technical|certif|project|key\s+tech|language|interest|reference|hobbies)/i.test(l);
-            const isDate = l => l.match(/(\b\d{4}\b)\s*[-–—to]+\s*(present|\d{4})/i) || l.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{4}\s*[-–—to]+\s*(present|\w+\s+\d{4})/i);
-            const isBullet = l => /^[•\-\*▪●○◆➤►▸‣]/.test(l) || /^[a-z]/.test(l.charAt(0)) && l.length > 40;
+            const isDate = l => {
+                const m1 = l.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s+\d{4}\s*[-–—to]+\s*(present|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s+\d{4}|\d{4})/i);
+                if (m1) return m1;
+                const m2 = l.match(/(\b\d{4}\b)\s*[-–—to]+\s*(present|\d{4})/i);
+                return m2 || null;
+            };
+            const isBullet = l => /^[•\-\*▪●○◆➤►▸‣■□▶]/.test(l);
 
-            for (let idx = 0; idx < lines.length; idx++) {
-                const l = lines[idx];
+            // Step 1: Collect all lines in the experience section
+            const secLines = [];
+            let sec = false;
+            for (const l of lines) {
                 if (isHeader(l)) { sec = true; continue; }
                 if (sec && isEndSec(l)) break;
-                if (!sec) { prevLine = l; continue; }
+                if (sec) secLines.push(l);
+            }
+            if (secLines.length === 0) return [];
 
-                const dm = isDate(l);
-                if (dm) {
-                    // Date line found — previous line(s) likely have title/company
-                    if (cur) entries.push(cur);
-                    // Look back for title and company
-                    let title = '', company = '';
-                    // Check if prevLine has the company, the line before that has the title
-                    // Or if the title is on the same line as something
-                    const lookback1 = idx > 0 ? lines[idx - 1] : '';
-                    const lookback2 = idx > 1 ? lines[idx - 2] : '';
-                    if (lookback1 && !isHeader(lookback1) && !isEndSec(lookback1) && !isBullet(lookback1)) {
-                        company = lookback1;
-                    }
-                    if (lookback2 && !isHeader(lookback2) && !isEndSec(lookback2) && !isBullet(lookback2) && lookback2 !== company) {
-                        title = lookback2;
-                    }
-                    // If company looks like a title, swap
-                    if (!title && company) { title = company; company = ''; }
-                    // Extract date range
-                    const dateStr = dm[0] || l;
-                    cur = { title: title.trim(), company: company.trim(), dateRange: dateStr.trim(), description: [] };
-                } else if (!cur && !dm) {
-                    // We haven't found a date yet — this might be a title line
-                    // Check if next line has a date
-                    const nextLine = idx + 1 < lines.length ? lines[idx + 1] : '';
-                    const nextNext = idx + 2 < lines.length ? lines[idx + 2] : '';
+            // Step 2: Find all date line indices
+            const dateIndices = [];
+            for (let i = 0; i < secLines.length; i++) {
+                if (isDate(secLines[i])) dateIndices.push(i);
+            }
+
+            // If no dates found at all, try a simpler approach
+            if (dateIndices.length === 0) {
+                // Try to find entries with em-dash or "at" patterns
+                const entries = [];
+                let cur = null;
+                for (const l of secLines) {
                     if (l.includes('—') || l.includes('–') || l.includes(' at ') || l.includes(' @ ')) {
                         if (cur) entries.push(cur);
                         const parts = l.split(/\s*[—–]\s*/);
-                        const datePart = isDate(l);
-                        cur = { title: parts[0] || '', company: parts[1] || '', dateRange: datePart ? datePart[0] : (parts[2] || ''), description: [] };
+                        cur = { title: parts[0] || '', company: parts[1] || '', dateRange: parts[2] || '', description: [] };
+                    } else if (cur && isBullet(l)) {
+                        cur.description.push(l.replace(/^[•\-\*▪●○◆➤►▸‣■□▶]\s*/, ''));
+                    } else if (cur) {
+                        cur.description.push(l);
                     }
-                } else if (cur && isBullet(l)) {
-                    cur.description.push(l.replace(/^[•\-\*▪●○◆➤►▸‣]\s*/, ''));
-                } else if (cur && l.length > 30 && !isDate(l)) {
-                    // Continuation of description without bullet
-                    cur.description.push(l);
                 }
-                prevLine = l;
+                if (cur) entries.push(cur);
+                return entries.filter(e => e.title || e.company);
             }
-            if (cur) entries.push(cur);
-            // Clean up: remove empty entries
+
+            // Step 3: Group lines into entries based on date positions
+            const entries = [];
+            for (let di = 0; di < dateIndices.length; di++) {
+                const dateIdx = dateIndices[di];
+                const dateLine = secLines[dateIdx];
+                const dateMatch = isDate(dateLine);
+                const dateRange = dateMatch ? dateMatch[0] : dateLine;
+
+                // Look BACK from date line to find title and company
+                // The lines between previous date's bullets and this date should be title/company
+                let title = '', company = '';
+
+                // Line immediately before the date
+                const lb1 = dateIdx > 0 ? secLines[dateIdx - 1] : '';
+                // Line 2 before the date
+                const lb2 = dateIdx > 1 ? secLines[dateIdx - 2] : '';
+
+                // Check if lb1 and lb2 are part of previous entry's bullets
+                const prevDateEnd = di > 0 ? dateIndices[di - 1] : -1;
+
+                if (lb1 && !isBullet(lb1) && !isDate(lb1) && (dateIdx - 1) > prevDateEnd) {
+                    company = lb1;
+                }
+                if (lb2 && !isBullet(lb2) && !isDate(lb2) && (dateIdx - 2) > prevDateEnd) {
+                    title = lb2;
+                }
+
+                // If we only found company but not title, it's probably the title
+                if (!title && company) { title = company; company = ''; }
+
+                // Collect bullet points / description lines after the date
+                const description = [];
+                const nextDateIdx = di + 1 < dateIndices.length ? dateIndices[di + 1] : secLines.length;
+                for (let j = dateIdx + 1; j < nextDateIdx; j++) {
+                    const line = secLines[j];
+                    // Skip if this is a title/company for the next entry
+                    if (di + 1 < dateIndices.length) {
+                        const nextDI = dateIndices[di + 1];
+                        if (j >= nextDI - 2 && !isBullet(line)) continue;
+                    }
+                    if (isBullet(line)) {
+                        description.push(line.replace(/^[•\-\*▪●○◆➤►▸‣■□▶]\s*/, ''));
+                    } else if (line.length > 20) {
+                        description.push(line);
+                    }
+                }
+
+                entries.push({
+                    title: title.trim(),
+                    company: company.trim(),
+                    dateRange: dateRange.trim(),
+                    description
+                });
+            }
+
             return entries.filter(e => e.title || e.company || e.description.length > 0);
         },
         // ─ Education ─ (skip "Relevant Coursework" as separate entries)
