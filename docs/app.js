@@ -182,16 +182,35 @@ document.addEventListener('DOMContentLoaded', () => {
             let text = '';
             if (ext === 'pdf') {
                 const ab = await file.arrayBuffer();
-                if (typeof pdfjsLib !== 'undefined') {
-                    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-                    const parts = [];
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const tc = await page.getTextContent();
-                        parts.push(tc.items.map(x => x.str).join(' '));
+                // Wait for pdfjsLib to be available (loaded via module script)
+                if (!window.pdfjsLib) {
+                    await new Promise((resolve) => {
+                        const handler = () => resolve();
+                        window.addEventListener('pdfjsReady', handler, { once: true });
+                        setTimeout(() => { window.removeEventListener('pdfjsReady', handler); resolve(); }, 5000);
+                    });
+                }
+                if (window.pdfjsLib) {
+                    try {
+                        const pdf = await window.pdfjsLib.getDocument({ data: ab }).promise;
+                        const parts = [];
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const tc = await page.getTextContent();
+                            parts.push(tc.items.map(x => x.str).join(' '));
+                        }
+                        text = parts.join('\n\n');
+                    } catch (pdfErr) {
+                        console.error('PDF.js extraction error:', pdfErr);
+                        toast('PDF extraction failed: ' + pdfErr.message + '. Try pasting text.', 'error');
+                        processingBar.style.display = 'none';
+                        return;
                     }
-                    text = parts.join('\n\n');
-                } else { text = await file.text(); }
+                } else {
+                    toast('PDF library still loading. Please wait a moment and try again, or paste text instead.', 'error');
+                    processingBar.style.display = 'none';
+                    return;
+                }
             } else if (ext === 'docx') {
                 const ab = await file.arrayBuffer();
                 if (typeof mammoth !== 'undefined') {
