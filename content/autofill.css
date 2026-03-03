@@ -1,0 +1,245 @@
+/* ============================================
+   JobMatch AI — Auto-Fill Styles
+   Floating panel + field highlights
+   ============================================ */
+
+/* ── Floating Results Panel ─────────────── */
+#jm-autofill-panel {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    width: 340px !important;
+    max-height: 480px !important;
+    z-index: 2147483647 !important;
+    background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.1) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    overflow: hidden !important;
+    animation: jm-af-slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+#jm-autofill-panel.jm-af-closing {
+    animation: jm-af-slideOut 0.3s ease forwards !important;
+}
+
+@keyframes jm-af-slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes jm-af-slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+}
+
+.jm-af-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 14px 16px !important;
+    background: rgba(99, 102, 241, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.jm-af-logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #e2e2f0 !important;
+}
+
+.jm-af-close {
+    background: none !important;
+    border: none !important;
+    color: #888 !important;
+    font-size: 20px !important;
+    cursor: pointer !important;
+    padding: 0 4px !important;
+    line-height: 1 !important;
+    transition: color 0.2s !important;
+}
+
+.jm-af-close:hover {
+    color: #ef4444 !important;
+}
+
+.jm-af-body {
+    padding: 14px 16px !important;
+    overflow-y: auto !important;
+    max-height: 380px !important;
+}
+
+.jm-af-status {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+    font-size: 13px !important;
+    color: #e2e2f0 !important;
+}
+
+.jm-af-success {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.jm-af-empty {
+    background: rgba(234, 179, 8, 0.1) !important;
+    border: 1px solid rgba(234, 179, 8, 0.2) !important;
+}
+
+.jm-af-status-icon {
+    font-size: 18px !important;
+}
+
+.jm-af-fields {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+}
+
+.jm-af-field {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s !important;
+}
+
+.jm-af-field:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+}
+
+.jm-af-field-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #818cf8 !important;
+    text-transform: capitalize !important;
+    min-width: 70px !important;
+    flex-shrink: 0 !important;
+}
+
+.jm-af-field-value {
+    font-size: 12px !important;
+    color: #c8c8d8 !important;
+    flex: 1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.jm-af-undo {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+    border-radius: 6px !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: all 0.2s !important;
+}
+
+.jm-af-undo:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+
+.jm-af-hint {
+    font-size: 11px !important;
+    color: #888 !important;
+    padding: 8px 0 4px !important;
+    line-height: 1.5 !important;
+}
+
+.jm-af-notif {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 2147483647 !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
+    font-family: 'Inter', -apple-system, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: white !important;
+    animation: jm-af-slideIn 0.3s ease !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.jm-af-notif-info {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+}
+
+.jm-af-notif-warning {
+    background: linear-gradient(135deg, #d97706, #f59e0b) !important;
+}
+
+.jm-af-notif-success {
+    background: linear-gradient(135deg, #059669, #10b981) !important;
+}
+
+.jm-af-notif-out {
+    animation: jm-af-slideOut 0.3s ease forwards !important;
+}
+
+.jm-fill-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 8px 16px !important;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-family: 'Inter', -apple-system, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+.jm-fill-btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+    background: linear-gradient(135deg, #5558e6, #7c51f0) !important;
+}
+
+.jm-fill-btn:active {
+    transform: translateY(0) !important;
+}
+
+input[data-jm-filled],
+textarea[data-jm-filled],
+select[data-jm-filled] {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5) !important;
+    transition: box-shadow 0.3s ease !important;
+}

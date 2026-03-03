@@ -829,6 +829,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // ── Fill Application ─────────────────────
+    document.getElementById('btnFillApplication').addEventListener('click', async () => {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) { showToast('No active tab found.', 'error'); return; }
+
+            const btn = document.getElementById('btnFillApplication');
+            btn.innerHTML = '⏳ Filling...';
+            btn.disabled = true;
+
+            chrome.tabs.sendMessage(tab.id, { action: 'fillApplication' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    showToast('⚠️ Navigate to a job application page first, then try again.', 'error');
+                    btn.innerHTML = '⚡ Fill Application';
+                    btn.disabled = false;
+                    return;
+                }
+                if (response && response.filled > 0) {
+                    showToast(`✅ Auto-filled ${response.filled} field${response.filled > 1 ? 's' : ''}! Review and submit.`, 'success');
+                    btn.innerHTML = `✅ ${response.filled} Filled!`;
+                    setTimeout(() => {
+                        btn.innerHTML = '⚡ Fill Application';
+                        btn.disabled = false;
+                    }, 3000);
+                } else {
+                    showToast('🔍 No empty fields found. Try clicking "Apply" first to open the form.', 'error');
+                    btn.innerHTML = '⚡ Fill Application';
+                    btn.disabled = false;
+                }
+            });
+        } catch (err) {
+            showToast('Could not auto-fill. Try navigating to the application form first.', 'error');
+        }
+    });
+
+    // ── Undo Fill ────────────────────────────
+    document.getElementById('btnUndoFill').addEventListener('click', async () => {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) { showToast('No active tab found.', 'error'); return; }
+            chrome.tabs.sendMessage(tab.id, { action: 'undoFill' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    showToast('No active auto-fill to undo.', 'error');
+                    return;
+                }
+                showToast('↩ All auto-filled fields restored to previous values.', 'success');
+            });
+        } catch (err) {
+            showToast('No active auto-fill to undo.', 'error');
+        }
+    });
+
     // ── Export Data ───────────────────────────
     document.getElementById('btnExportData').addEventListener('click', async () => {
         const jobs = await StorageManager.getSavedJobs();

@@ -130,12 +130,11 @@
                 const processed = document.querySelectorAll('[data-jobmatch-processed]');
                 sendResponse({ jobsFound: processed.length });
             });
-            return true; // Keep channel open for async response
+            return true;
         }
 
         if (msg.action === 'profileUpdated') {
             loadProfile().then(() => {
-                // Re-process all cards
                 document.querySelectorAll('[data-jobmatch-processed]').forEach(card => {
                     const badge = card.querySelector('.jm-badge');
                     if (badge) badge.remove();
@@ -144,21 +143,97 @@
                 processJobListings();
             });
         }
+
+        // ── Auto-Fill from popup ──
+        if (msg.action === 'fillApplication') {
+            if (typeof AutoFiller !== 'undefined') {
+                AutoFiller.fillPage().then(result => {
+                    sendResponse(result);
+                });
+            } else {
+                sendResponse({ filled: 0, error: 'AutoFiller not available' });
+            }
+            return true;
+        }
+
+        if (msg.action === 'undoFill') {
+            if (typeof AutoFiller !== 'undefined') {
+                AutoFiller.undoAll();
+                sendResponse({ success: true });
+            }
+            return true;
+        }
     });
 
+    // ── Floating Auto-Fill FAB ──────────────────
+    function maybeShowAutoFillFAB() {
+        if (document.getElementById('jm-autofill-fab')) return;
+
+        const forms = document.querySelectorAll('form');
+        let isApplicationPage = false;
+
+        const url = window.location.href.toLowerCase();
+        const appPatterns = ['apply', 'application', 'submit', 'careers', 'jobs/view', 'easy-apply'];
+        if (appPatterns.some(p => url.includes(p))) isApplicationPage = true;
+
+        if (!isApplicationPage) {
+            forms.forEach(form => {
+                const text = form.textContent.toLowerCase();
+                const inputs = form.querySelectorAll('input, textarea');
+                if (inputs.length >= 3 && (text.includes('name') || text.includes('email') || text.includes('resume') || text.includes('apply'))) {
+                    isApplicationPage = true;
+                }
+            });
+        }
+
+        if (document.querySelector('.jobs-easy-apply-modal, .artdeco-modal--layer-default')) {
+            isApplicationPage = true;
+        }
+
+        if (!isApplicationPage) return;
+
+        const fab = document.createElement('button');
+        fab.id = 'jm-autofill-fab';
+        fab.className = 'jm-fill-btn';
+        fab.style.cssText = 'position:fixed!important;bottom:24px!important;left:24px!important;z-index:2147483646!important;padding:12px 20px!important;font-size:14px!important;border-radius:12px!important;';
+        fab.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> ⚡ Auto-Fill Application`;
+
+        fab.addEventListener('click', async () => {
+            fab.innerHTML = '⏳ Filling...';
+            if (typeof AutoFiller !== 'undefined') {
+                const result = await AutoFiller.fillPage();
+                if (result.filled > 0) {
+                    fab.innerHTML = `✅ ${result.filled} fields filled`;
+                    fab.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+                } else {
+                    fab.innerHTML = '🔍 No fields found';
+                    fab.style.background = 'linear-gradient(135deg, #d97706, #f59e0b)';
+                }
+                setTimeout(() => {
+                    fab.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> ⚡ Auto-Fill Application`;
+                    fab.style.background = '';
+                }, 3000);
+            }
+        });
+
+        document.body.appendChild(fab);
+    }
+
     // ── Initial scan ────────────────────────────
-    // Wait for page to load, then scan
     if (document.readyState === 'complete') {
         setTimeout(processJobListings, 1000);
+        setTimeout(maybeShowAutoFillFAB, 2000);
     } else {
         window.addEventListener('load', () => {
             setTimeout(processJobListings, 1500);
+            setTimeout(maybeShowAutoFillFAB, 2500);
         });
     }
 
-    // Periodic re-scan for dynamically loaded content
+    // Periodic re-scan for dynamically loaded content + FAB
     setInterval(() => {
         processJobListings();
+        maybeShowAutoFillFAB();
     }, 5000);
 
 })();

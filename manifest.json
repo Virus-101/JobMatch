@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "JobMatch AI",
-  "version": "1.0.0",
-  "description": "Smart job matching based on your CV and preferences. Score jobs, track applications, and land your dream role.",
+  "version": "1.1.0",
+  "description": "Smart job matching + auto-fill applications based on your CV. Score jobs, fill forms, track applications.",
   "permissions": [
     "storage",
     "activeTab",
@@ -14,7 +14,16 @@
     "https://www.indeed.com/*",
     "https://www.glassdoor.com/*",
     "https://www.monster.com/*",
-    "https://www.ziprecruiter.com/*"
+    "https://www.ziprecruiter.com/*",
+    "https://jobs.lever.co/*",
+    "https://boards.greenhouse.io/*",
+    "https://apply.workable.com/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://*.taleo.net/*",
+    "https://*.smartrecruiters.com/*",
+    "https://*.breezy.hr/*",
+    "https://*.ashbyhq.com/*",
+    "https://*.bamboohr.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -43,10 +52,34 @@
         "utils/storage.js",
         "utils/cv-parser.js",
         "utils/job-matcher.js",
+        "content/autofill.js",
         "content/content.js"
       ],
       "css": [
-        "content/content.css"
+        "content/content.css",
+        "content/autofill.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://jobs.lever.co/*",
+        "https://boards.greenhouse.io/*",
+        "https://apply.workable.com/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.taleo.net/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.breezy.hr/*",
+        "https://*.ashbyhq.com/*",
+        "https://*.bamboohr.com/*"
+      ],
+      "js": [
+        "utils/storage.js",
+        "content/autofill.js",
+        "content/content.js"
+      ],
+      "css": [
+        "content/autofill.css"
       ],
       "run_at": "document_idle"
     }
