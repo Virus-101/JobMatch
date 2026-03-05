@@ -108,6 +108,13 @@
                     </svg>
                     Cover Letter
                 </button>
+                <button class="sidebar-link" data-panel="autoapply">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13" />
+                        <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                    Auto Apply
+                </button>
             </nav>
 
             <div class="sidebar-footer">
@@ -593,6 +600,140 @@
                         </div>
                     </div>
                     <div class="cl-output" id="clOutput"></div>
+                </div>
+            </section>
+
+            <!-- ── Auto Apply Panel ── -->
+            <section class="panel" id="panel-autoapply">
+                <div class="panel-header">
+                    <div>
+                        <h1>Auto Apply</h1>
+                        <p class="panel-subtitle">Automatically apply to jobs using your existing accounts</p>
+                    </div>
+                    <div id="aaConnectionStatus" class="aa-connection offline">
+                        <span class="aa-dot"></span> Engine Offline
+                    </div>
+                </div>
+
+                <!-- Engine Connection -->
+                <div class="form-card aa-connect-card" id="aaConnectCard">
+                    <h3>🔌 Connect to Engine</h3>
+                    <p class="dash-hint">The Auto-Apply engine runs locally on your machine. It uses your Chrome browser
+                        with all your existing logins.</p>
+                    <div class="aa-steps">
+                        <div class="aa-step"><span class="aa-step-num">1</span> Open a terminal in the project folder
+                        </div>
+                        <div class="aa-step"><span class="aa-step-num">2</span> Run:
+                            <code>cd engine && npm install && npm start</code></div>
+                        <div class="aa-step"><span class="aa-step-num">3</span> Open <a href="http://localhost:3456"
+                                target="_blank">http://localhost:3456</a> or stay here</div>
+                    </div>
+                    <button class="btn btn-primary" id="btnConnectEngine" style="margin-top:14px;">🔌 Connect to
+                        Engine</button>
+                </div>
+
+                <!-- Account Detection -->
+                <div class="form-card" id="aaAccountsCard" style="display:none;">
+                    <h3>🔑 Your Accounts</h3>
+                    <p class="dash-hint">Platforms where you're logged in (the engine uses your existing sessions):</p>
+                    <div class="aa-accounts" id="aaAccounts"></div>
+                    <button class="btn btn-sm" id="btnDetectAccounts" style="margin-top:10px;">🔄 Re-detect
+                        Accounts</button>
+                </div>
+
+                <!-- Search & Apply Settings -->
+                <div class="form-card" id="aaSettingsCard" style="display:none;">
+                    <h3>⚙️ Auto-Apply Settings</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Job Title / Keywords</label>
+                            <input type="text" id="aaQuery" class="input" placeholder="e.g. Software Engineer">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="aaLocation" class="input" placeholder="e.g. Remote, Italy">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Platforms</label>
+                            <div class="aa-platform-toggles">
+                                <label class="aa-toggle"><input type="checkbox" id="aaPlatLinkedin" checked>
+                                    LinkedIn</label>
+                                <label class="aa-toggle"><input type="checkbox" id="aaPlatIndeed" checked>
+                                    Indeed</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Applications</label>
+                            <input type="number" id="aaMaxApps" class="input" value="25" min="1" max="100">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="aa-toggle"><input type="checkbox" id="aaEasyOnly" checked> Easy Apply
+                                only</label>
+                        </div>
+                        <div class="form-group">
+                            <label class="aa-toggle"><input type="checkbox" id="aaSkipApplied" checked> Skip already
+                                applied</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="form-card" id="aaControlsCard" style="display:none;">
+                    <h3>🎮 Controls</h3>
+                    <div class="aa-controls">
+                        <button class="btn btn-primary btn-lg" id="btnStartApply">🚀 Start Auto-Apply</button>
+                        <button class="btn btn-lg" id="btnPauseApply" style="display:none;">⏸️ Pause</button>
+                        <button class="btn btn-lg" id="btnResumeApply" style="display:none;">▶️ Resume</button>
+                        <button class="btn btn-lg" id="btnStopApply" style="display:none;">🛑 Stop</button>
+                    </div>
+                    <div class="aa-progress" id="aaProgress" style="display:none;">
+                        <div class="aa-progress-bar">
+                            <div class="aa-progress-fill" id="aaProgressFill"></div>
+                        </div>
+                        <span id="aaProgressText">0 / 0</span>
+                    </div>
+                </div>
+
+                <!-- Single URL Apply -->
+                <div class="form-card" id="aaSingleCard" style="display:none;">
+                    <h3>🎯 Apply to a Specific Job</h3>
+                    <p class="dash-hint">Paste any job URL and the engine will fill the application automatically:</p>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:3">
+                            <input type="text" id="aaSingleUrl" class="input"
+                                placeholder="https://www.linkedin.com/jobs/view/...">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <button class="btn btn-primary btn-full" id="btnApplySingle">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Feed -->
+                <div class="form-card" id="aaFeedCard" style="display:none;">
+                    <div class="dash-card-header">
+                        <h3>📡 Live Activity</h3>
+                        <button class="btn btn-sm" id="btnClearFeed">Clear</button>
+                    </div>
+                    <div class="aa-feed" id="aaFeed">
+                        <div class="aa-feed-empty">Waiting for engine to start...</div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-row stats-row-sm" id="aaStatsRow" style="display:none;">
+                    <div class="stat-card stat-mini"><span class="stat-num" id="aaStatApplied">0</span><span
+                            class="stat-label">Applied</span></div>
+                    <div class="stat-card stat-mini"><span class="stat-num" id="aaStatFailed">0</span><span
+                            class="stat-label">Failed</span></div>
+                    <div class="stat-card stat-mini"><span class="stat-num" id="aaStatSkipped">0</span><span
+                            class="stat-label">Skipped</span></div>
+                    <div class="stat-card stat-mini"><span class="stat-num" id="aaStatQueue">0</span><span
+                            class="stat-label">In Queue</span></div>
                 </div>
             </section>
 

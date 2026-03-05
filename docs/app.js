@@ -1175,6 +1175,281 @@ ${profile.phone || ''}`;
         toast('💾 Downloaded!', 'success');
     });
 
+    // ════════════════════════════════════════════
+    // ★ AUTO APPLY ENGINE CONNECTION ★
+    // ════════════════════════════════════════════
+    const ENGINE_URL = 'http://localhost:3456';
+    const WS_URL = 'ws://localhost:3456';
+    let ws = null;
+    let engineConnected = false;
+
+    function updateConnectionUI(connected) {
+        engineConnected = connected;
+        const status = document.getElementById('aaConnectionStatus');
+        const connectCard = document.getElementById('aaConnectCard');
+        const cards = ['aaAccountsCard', 'aaSettingsCard', 'aaControlsCard', 'aaSingleCard', 'aaFeedCard', 'aaStatsRow'];
+
+        if (connected) {
+            status.className = 'aa-connection online';
+            status.innerHTML = '<span class="aa-dot"></span> Engine Online';
+            connectCard.style.display = 'none';
+            cards.forEach(id => document.getElementById(id).style.display = '');
+
+            // Pre-fill from profile
+            const q = document.getElementById('aaQuery');
+            const l = document.getElementById('aaLocation');
+            if (!q.value && profile.title) q.value = profile.title;
+            if (!l.value && profile.location) l.value = profile.location;
+        } else {
+            status.className = 'aa-connection offline';
+            status.innerHTML = '<span class="aa-dot"></span> Engine Offline';
+            connectCard.style.display = '';
+            cards.forEach(id => document.getElementById(id).style.display = 'none');
+        }
+    }
+
+    function connectToEngine() {
+        try {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                updateConnectionUI(true);
+                toast('🔌 Connected to Auto-Apply engine!', 'success');
+
+                // Send profile to engine
+                fetch(`${ENGINE_URL}/api/profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profile),
+                }).catch(() => { });
+            };
+
+            ws.onclose = () => {
+                updateConnectionUI(false);
+            };
+
+            ws.onerror = () => {
+                updateConnectionUI(false);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const payload = JSON.parse(event.data);
+                    handleEngineEvent(payload);
+                } catch (e) { /* ignore parse errors */ }
+            };
+        } catch (err) {
+            updateConnectionUI(false);
+            toast('Could not connect. Make sure the engine is running.', 'error');
+        }
+    }
+
+    function handleEngineEvent(payload) {
+        const { event, data } = payload;
+        const feed = document.getElementById('aaFeed');
+
+        // Clear "waiting" message
+        const empty = feed.querySelector('.aa-feed-empty');
+        if (empty) empty.remove();
+
+        function addFeedItem(icon, text, type = '') {
+            const el = document.createElement('div');
+            el.className = `aa-feed-item ${type}`;
+            const time = new Date().toLocaleTimeString();
+            el.innerHTML = `<span class="aa-feed-time">${time}</span> <span>${icon}</span> <span>${text}</span>`;
+            feed.insertBefore(el, feed.firstChild);
+            // Keep max 50 items
+            while (feed.children.length > 50) feed.lastChild.remove();
+        }
+
+        switch (event) {
+            case 'connected':
+                if (data) {
+                    document.getElementById('aaStatApplied').textContent = data.totalApplied || 0;
+                    document.getElementById('aaStatFailed').textContent = data.totalFailed || 0;
+                    document.getElementById('aaStatSkipped').textContent = data.totalSkipped || 0;
+                    document.getElementById('aaStatQueue').textContent = data.queueLength || 0;
+                }
+                break;
+
+            case 'accounts_detected':
+                renderAccounts(data);
+                break;
+
+            case 'status':
+                addFeedItem('ℹ️', data.message);
+                break;
+
+            case 'jobs_found':
+                addFeedItem('🔎', `Found ${data.count} jobs on ${data.platform}`, 'info');
+                break;
+
+            case 'applying':
+                addFeedItem('⏳', `[${data.index}/${data.total}] Applying: <strong>${data.job.title}</strong> at ${data.job.company}`);
+                document.getElementById('aaProgress').style.display = 'flex';
+                document.getElementById('aaProgressFill').style.width = `${(data.index / data.total) * 100}%`;
+                document.getElementById('aaProgressText').textContent = `${data.index} / ${data.total}`;
+                break;
+
+            case 'applied':
+                addFeedItem('✅', `Applied: <strong>${data.job.title}</strong> at ${data.job.company}`, 'success');
+                document.getElementById('aaStatApplied').textContent = data.total;
+                break;
+
+            case 'skipped':
+                addFeedItem('⏭️', `Skipped: ${data.job.title} (${data.reason})`, 'skip');
+                break;
+
+            case 'failed':
+                addFeedItem('❌', `Failed: ${data.job.title} — ${data.reason}`, 'error');
+                break;
+
+            case 'external':
+                addFeedItem('🔗', `External: <a href="${data.url}" target="_blank">${data.job.title}</a>`, 'info');
+                break;
+
+            case 'warning':
+                addFeedItem('⚠️', data.message, 'warn');
+                break;
+
+            case 'error':
+                addFeedItem('🚨', data.message, 'error');
+                toast(data.message, 'error');
+                break;
+
+            case 'started':
+                document.getElementById('btnStartApply').style.display = 'none';
+                document.getElementById('btnPauseApply').style.display = '';
+                document.getElementById('btnStopApply').style.display = '';
+                addFeedItem('🚀', 'Auto-apply started!', 'success');
+                break;
+
+            case 'paused':
+                document.getElementById('btnPauseApply').style.display = 'none';
+                document.getElementById('btnResumeApply').style.display = '';
+                addFeedItem('⏸️', 'Paused');
+                break;
+
+            case 'resumed':
+                document.getElementById('btnResumeApply').style.display = 'none';
+                document.getElementById('btnPauseApply').style.display = '';
+                addFeedItem('▶️', 'Resumed');
+                break;
+
+            case 'stopped':
+            case 'completed':
+                document.getElementById('btnStartApply').style.display = '';
+                document.getElementById('btnPauseApply').style.display = 'none';
+                document.getElementById('btnResumeApply').style.display = 'none';
+                document.getElementById('btnStopApply').style.display = 'none';
+                if (event === 'completed') {
+                    addFeedItem('🏁', `Completed! Applied to ${data.applied} of ${data.total} jobs.`, 'success');
+                    toast(`🏁 Done! Applied to ${data.applied} jobs.`, 'success');
+                } else {
+                    addFeedItem('🛑', 'Stopped by user');
+                }
+                break;
+        }
+    }
+
+    function renderAccounts(accounts) {
+        const c = document.getElementById('aaAccounts');
+        c.innerHTML = '';
+        for (const [key, acc] of Object.entries(accounts)) {
+            const el = document.createElement('div');
+            el.className = `aa-account ${acc.loggedIn ? 'logged-in' : 'logged-out'}`;
+            el.innerHTML = `
+                <span class="aa-account-status">${acc.loggedIn ? '✅' : '❌'}</span>
+                <span class="aa-account-name">${acc.name}</span>
+                <span class="aa-account-label">${acc.loggedIn ? 'Logged in' : '<a href="' + acc.loginUrl + '" target="_blank">Log in →</a>'}</span>
+            `;
+            c.appendChild(el);
+        }
+    }
+
+    // Event listeners
+    document.getElementById('btnConnectEngine').addEventListener('click', connectToEngine);
+
+    document.getElementById('btnDetectAccounts').addEventListener('click', async () => {
+        toast('🔍 Detecting accounts...', 'success');
+        try {
+            const res = await fetch(`${ENGINE_URL}/api/accounts`);
+            const accounts = await res.json();
+            renderAccounts(accounts);
+        } catch { toast('Engine not reachable', 'error'); }
+    });
+
+    document.getElementById('btnStartApply').addEventListener('click', async () => {
+        const query = document.getElementById('aaQuery').value.trim();
+        const location = document.getElementById('aaLocation').value.trim();
+        if (!query) { toast('Enter a job title to search for', 'error'); return; }
+
+        const platforms = [];
+        if (document.getElementById('aaPlatLinkedin').checked) platforms.push('linkedin');
+        if (document.getElementById('aaPlatIndeed').checked) platforms.push('indeed');
+
+        try {
+            await fetch(`${ENGINE_URL}/api/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    profile,
+                    settings: {
+                        query,
+                        location,
+                        platforms,
+                        maxApplicationsPerSession: parseInt(document.getElementById('aaMaxApps').value) || 25,
+                        easyApplyOnly: document.getElementById('aaEasyOnly').checked,
+                        skipApplied: document.getElementById('aaSkipApplied').checked,
+                    },
+                }),
+            });
+        } catch { toast('Engine not reachable', 'error'); }
+    });
+
+    document.getElementById('btnPauseApply').addEventListener('click', () => {
+        fetch(`${ENGINE_URL}/api/pause`, { method: 'POST' }).catch(() => { });
+    });
+
+    document.getElementById('btnResumeApply').addEventListener('click', () => {
+        fetch(`${ENGINE_URL}/api/resume`, { method: 'POST' }).catch(() => { });
+    });
+
+    document.getElementById('btnStopApply').addEventListener('click', () => {
+        fetch(`${ENGINE_URL}/api/stop`, { method: 'POST' }).catch(() => { });
+    });
+
+    document.getElementById('btnApplySingle').addEventListener('click', async () => {
+        const url = document.getElementById('aaSingleUrl').value.trim();
+        if (!url) { toast('Paste a job URL', 'error'); return; }
+
+        try {
+            toast('🎯 Applying...', 'success');
+            const res = await fetch(`${ENGINE_URL}/api/apply-url`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, profile }),
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast('✅ Application submitted!', 'success');
+            } else {
+                toast(`Application: ${result.reason}`, 'error');
+            }
+        } catch { toast('Engine not reachable', 'error'); }
+    });
+
+    document.getElementById('btnClearFeed').addEventListener('click', () => {
+        document.getElementById('aaFeed').innerHTML = '<div class="aa-feed-empty">Feed cleared.</div>';
+    });
+
+    // Try auto-connect on load
+    setTimeout(() => {
+        fetch(`${ENGINE_URL}/api/status`).then(r => r.json()).then(() => {
+            connectToEngine();
+        }).catch(() => { /* engine not running, that's fine */ });
+    }, 1000);
+
     // ── Init ─────────────────────────────────
     refreshAll();
     initJobSearch();

@@ -1,0 +1,16 @@
+{
+    "name": "jobmatch-auto-apply-engine",
+    "version": "1.0.0",
+    "description": "Automated job application engine — applies to jobs using your existing browser sessions",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node server.js --dev"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "puppeteer": "^22.0.0",
+        "ws": "^8.16.0",
+        "cors": "^2.8.5"
+    }
+}
