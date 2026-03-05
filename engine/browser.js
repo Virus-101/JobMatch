@@ -1,68 +1,121 @@
 // ============================================
 // JobMatch AI — Browser Manager
-// Connects Puppeteer to YOUR Chrome profile
-// so all your existing logins are available
+// Connects to YOUR already-running Chrome
+// so ALL your logins are preserved
 // ============================================
 
 const puppeteer = require('puppeteer');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const http = require('http');
+
+const DEBUG_PORT = 9222;
 
 class BrowserManager {
     constructor() {
         this.browser = null;
-        this.activePage = null;
         this.isConnected = false;
         this.detectedAccounts = {};
+        this.mode = null; // 'connect' or 'launch'
     }
 
-    // Find the user's default Chrome profile path
-    getChromeProfilePath() {
-        const platform = os.platform();
-        const home = os.homedir();
+    // ═══════════════════════════════════════════
+    // MODE 1 (PREFERRED): Connect to running Chrome
+    // Your Chrome must be started with:
+    //   --remote-debugging-port=9222
+    // ═══════════════════════════════════════════
 
+    // Check if Chrome is running with debugging enabled
+    async _getChromeDebugEndpoint() {
+        return new Promise((resolve) => {
+            const req = http.get(`http://127.0.0.1:${DEBUG_PORT}/json/version`, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try {
+                        const info = JSON.parse(data);
+                        resolve(info.webSocketDebuggerUrl || null);
+                    } catch { resolve(null); }
+                });
+            });
+            req.on('error', () => resolve(null));
+            req.setTimeout(3000, () => { req.abort(); resolve(null); });
+        });
+    }
+
+    // Connect to user's already-running Chrome browser
+    async connectToExistingChrome() {
+        const wsEndpoint = await this._getChromeDebugEndpoint();
+        if (!wsEndpoint) return false;
+
+        try {
+            this.browser = await puppeteer.connect({
+                browserWSEndpoint: wsEndpoint,
+                defaultViewport: null,
+            });
+
+            this.isConnected = true;
+            this.mode = 'connect';
+
+            this.browser.on('disconnected', () => {
+                this.isConnected = false;
+                this.browser = null;
+                console.log('[Browser] Disconnected from Chrome');
+            });
+
+            console.log('[Browser] ✅ Connected to your running Chrome — all logins preserved!');
+            return true;
+        } catch (err) {
+            console.log('[Browser] Could not connect:', err.message);
+            return false;
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    // MODE 2 (FALLBACK): Launch with user profile
+    // Uses your Chrome profile directory directly
+    // Requires Chrome to be closed first
+    // ═══════════════════════════════════════════
+
+    getChromeProfilePath() {
+        const home = os.homedir();
+        const platform = os.platform();
         const paths = {
             win32: path.join(home, 'AppData', 'Local', 'Google', 'Chrome', 'User Data'),
             darwin: path.join(home, 'Library', 'Application Support', 'Google', 'Chrome'),
             linux: path.join(home, '.config', 'google-chrome'),
         };
+        const p = paths[platform];
+        return (p && fs.existsSync(p)) ? p : null;
+    }
 
-        const profilePath = paths[platform];
-        if (profilePath && fs.existsSync(profilePath)) return profilePath;
-
-        // Fallback: try other Chromium browsers
-        const fallbacks = {
+    getChromeExecutablePath() {
+        const platform = os.platform();
+        const candidates = {
             win32: [
-                path.join(home, 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data'),
-                path.join(home, 'AppData', 'Local', 'BraveSoftware', 'Brave-Browser', 'User Data'),
+                'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                path.join(os.homedir(), 'AppData', 'Local', 'Google', 'Chrome', 'Application', 'chrome.exe'),
             ],
-            darwin: [
-                path.join(home, 'Library', 'Application Support', 'Microsoft Edge'),
-                path.join(home, 'Library', 'Application Support', 'BraveSoftware', 'Brave-Browser'),
-            ],
-            linux: [
-                path.join(home, '.config', 'microsoft-edge'),
-                path.join(home, '.config', 'BraveSoftware', 'Brave-Browser'),
-            ],
+            darwin: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'],
+            linux: ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable'],
         };
-
-        for (const fallbackPath of (fallbacks[platform] || [])) {
-            if (fs.existsSync(fallbackPath)) return fallbackPath;
+        for (const p of (candidates[platform] || [])) {
+            if (fs.existsSync(p)) return p;
         }
-
         return null;
     }
 
-    // Launch browser with user's profile (preserves all logins)
-    async launch() {
-        if (this.browser && this.isConnected) return;
-
+    async launchWithProfile() {
         const profilePath = this.getChromeProfilePath();
-        console.log('[Browser] Chrome profile path:', profilePath || 'Not found, using fresh profile');
+        const chromePath = this.getChromeExecutablePath();
 
-        const launchOptions = {
-            headless: false, // Must be visible so user can intervene
+        console.log('[Browser] Profile:', profilePath || 'not found');
+        console.log('[Browser] Chrome:', chromePath || 'not found');
+
+        const opts = {
+            headless: false,
             defaultViewport: null,
             args: [
                 '--no-sandbox',
@@ -70,22 +123,16 @@ class BrowserManager {
                 '--disable-blink-features=AutomationControlled',
                 '--disable-infobars',
                 '--window-size=1366,900',
-                '--start-maximized',
             ],
         };
 
-        // Use a copy of the profile to avoid conflicts with running Chrome
-        if (profilePath) {
-            const tempProfile = path.join(os.tmpdir(), 'jobmatch-chrome-profile');
-            launchOptions.userDataDir = tempProfile;
-
-            // Copy cookies & login data from main profile
-            await this._copyLoginData(profilePath, tempProfile);
-        }
+        if (chromePath) opts.executablePath = chromePath;
+        if (profilePath) opts.userDataDir = profilePath;
 
         try {
-            this.browser = await puppeteer.launch(launchOptions);
+            this.browser = await puppeteer.launch(opts);
             this.isConnected = true;
+            this.mode = 'launch';
 
             this.browser.on('disconnected', () => {
                 this.isConnected = false;
@@ -93,66 +140,56 @@ class BrowserManager {
                 console.log('[Browser] Disconnected');
             });
 
-            console.log('[Browser] Launched successfully');
+            console.log('[Browser] ✅ Launched with your Chrome profile — logins should be available');
+            return true;
         } catch (err) {
             console.error('[Browser] Launch failed:', err.message);
-            throw err;
+            return false;
         }
     }
 
-    // Copy login/cookie data from main Chrome profile
-    async _copyLoginData(sourcePath, destPath) {
-        try {
-            if (!fs.existsSync(destPath)) fs.mkdirSync(destPath, { recursive: true });
+    // ═══════════════════════════════════════════
+    // MAIN: Smart launch — tries connect first, then launch
+    // ═══════════════════════════════════════════
 
-            const defaultSrc = path.join(sourcePath, 'Default');
-            const defaultDest = path.join(destPath, 'Default');
-            if (!fs.existsSync(defaultDest)) fs.mkdirSync(defaultDest, { recursive: true });
+    async launch() {
+        if (this.browser && this.isConnected) return;
 
-            // Copy key files that store login sessions
-            const filesToCopy = ['Cookies', 'Login Data', 'Web Data', 'Preferences', 'Secure Preferences'];
-            for (const file of filesToCopy) {
-                const src = path.join(defaultSrc, file);
-                const dest = path.join(defaultDest, file);
-                if (fs.existsSync(src)) {
-                    try { fs.copyFileSync(src, dest); } catch (e) { /* file may be locked */ }
-                }
-            }
+        // Try Mode 1 first: connect to running Chrome
+        console.log('[Browser] Trying to connect to your running Chrome...');
+        const connected = await this.connectToExistingChrome();
+        if (connected) return;
 
-            // Copy Local State (needed for decryption)
-            const localStateSrc = path.join(sourcePath, 'Local State');
-            const localStateDest = path.join(destPath, 'Local State');
-            if (fs.existsSync(localStateSrc)) {
-                try { fs.copyFileSync(localStateSrc, localStateDest); } catch (e) { /* ignore */ }
-            }
-        } catch (err) {
-            console.log('[Browser] Could not copy login data:', err.message);
+        // Mode 2: launch with profile
+        console.log('[Browser] Chrome not in debug mode. Launching with your profile...');
+        console.log('[Browser] ⚡ TIP: For best results, restart Chrome with this shortcut:');
+        console.log('[Browser]    chrome.exe --remote-debugging-port=9222');
+        console.log('[Browser]    Then all your logins will be instantly available!');
+
+        const launched = await this.launchWithProfile();
+        if (!launched) {
+            throw new Error('Could not connect to or launch Chrome. Close all Chrome windows and try again.');
         }
     }
 
-    // Get a new page
+    // Get a page (reuse existing tab or create new one)
     async newPage() {
         if (!this.browser) await this.launch();
+
+        // When connected to existing Chrome, open a new tab
         const page = await this.browser.newPage();
 
-        // Make automation less detectable
+        // Stealth: make automation less detectable
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => false });
             Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
             window.chrome = { runtime: {} };
         });
 
-        // Set realistic user agent
-        await page.setUserAgent(
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-        );
-
-        this.activePage = page;
         return page;
     }
 
-    // Detect which accounts the user is logged into
+    // Detect which platforms the user is logged into
     async detectAccounts() {
         const accounts = {};
         const page = await this.newPage();
@@ -161,19 +198,29 @@ class BrowserManager {
             {
                 name: 'LinkedIn',
                 url: 'https://www.linkedin.com/feed/',
-                loggedInSelector: '.feed-identity-module, .global-nav__me-photo, img.feed-identity-module__member-photo',
+                loggedInCheck: async (p) => {
+                    const url = p.url();
+                    // If we're NOT redirected to login page, we're logged in
+                    return !url.includes('/login') && !url.includes('/authwall');
+                },
                 loginUrl: 'https://www.linkedin.com/login',
             },
             {
                 name: 'Indeed',
-                url: 'https://www.indeed.com/',
-                loggedInSelector: '[data-gnav-element-name="AccountMenu"], .gnav-Account',
+                url: 'https://www.indeed.com/myaccount',
+                loggedInCheck: async (p) => {
+                    const url = p.url();
+                    return !url.includes('/auth') && !url.includes('/login');
+                },
                 loginUrl: 'https://secure.indeed.com/auth',
             },
             {
                 name: 'Glassdoor',
-                url: 'https://www.glassdoor.com/',
-                loggedInSelector: '#AccountMenuButton, .accountMenu',
+                url: 'https://www.glassdoor.com/member/home/index.htm',
+                loggedInCheck: async (p) => {
+                    const url = p.url();
+                    return !url.includes('/login') && !url.includes('/auth');
+                },
                 loginUrl: 'https://www.glassdoor.com/profile/login_input.htm',
             },
         ];
@@ -183,13 +230,12 @@ class BrowserManager {
                 await page.goto(platform.url, { waitUntil: 'networkidle2', timeout: 15000 });
                 await new Promise(r => setTimeout(r, 2000));
 
-                const isLoggedIn = await page.$(platform.loggedInSelector) !== null;
+                const isLoggedIn = await platform.loggedInCheck(page);
                 accounts[platform.name.toLowerCase()] = {
                     name: platform.name,
                     loggedIn: isLoggedIn,
                     loginUrl: platform.loginUrl,
                 };
-
                 console.log(`[Accounts] ${platform.name}: ${isLoggedIn ? '✅ Logged in' : '❌ Not logged in'}`);
             } catch (err) {
                 accounts[platform.name.toLowerCase()] = {
@@ -206,10 +252,14 @@ class BrowserManager {
         return accounts;
     }
 
-    // Close everything
     async close() {
         if (this.browser) {
-            await this.browser.close();
+            if (this.mode === 'connect') {
+                // Don't close the user's browser! Just disconnect.
+                this.browser.disconnect();
+            } else {
+                await this.browser.close();
+            }
             this.browser = null;
             this.isConnected = false;
         }
