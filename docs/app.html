@@ -76,6 +76,38 @@
                     </svg>
                     Experience
                 </button>
+
+                <div class="sidebar-divider"></div>
+
+                <button class="sidebar-link" data-panel="jobsearch">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    Job Search
+                </button>
+                <button class="sidebar-link" data-panel="matchscore">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                    Match Score
+                </button>
+                <button class="sidebar-link" data-panel="applications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Applications
+                </button>
+                <button class="sidebar-link" data-panel="coverletter">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    Cover Letter
+                </button>
             </nav>
 
             <div class="sidebar-footer">
@@ -362,6 +394,205 @@
                         </div>
                         <button class="btn-add" id="btnAddEdu">+ Add Education</button>
                     </div>
+                </div>
+            </section>
+
+            <!-- ── Job Search Panel ── -->
+            <section class="panel" id="panel-jobsearch">
+                <div class="panel-header">
+                    <div>
+                        <h1>Job Search</h1>
+                        <p class="panel-subtitle">Find jobs matching your profile across top platforms</p>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <h3>🔍 Search Settings</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Job Title / Keywords</label>
+                            <input type="text" id="jsTitle" class="input" placeholder="e.g. Software Engineer">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="jsLocation" class="input" placeholder="e.g. Remote, Italy, USA">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btnSearchJobs" style="margin-top: 12px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        Search All Platforms
+                    </button>
+                </div>
+
+                <div class="form-card" id="jsResultsCard" style="display:none;">
+                    <h3>🌐 Open in Job Platforms</h3>
+                    <p class="dash-hint">Click any platform to open your search in a new tab:</p>
+                    <div class="js-platforms" id="jsPlatforms"></div>
+                </div>
+
+                <div class="form-card">
+                    <h3>💡 Quick Search by Your Skills</h3>
+                    <p class="dash-hint">Click a skill to search for jobs requiring it:</p>
+                    <div class="skill-search-tags" id="jsSkillTags"></div>
+                </div>
+            </section>
+
+            <!-- ── Match Score Panel ── -->
+            <section class="panel" id="panel-matchscore">
+                <div class="panel-header">
+                    <div>
+                        <h1>Match Score</h1>
+                        <p class="panel-subtitle">Paste a job description to see how well you match</p>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <h3>📋 Paste Job Description</h3>
+                    <textarea id="msJobDesc" class="input textarea-lg" rows="8"
+                        placeholder="Paste the full job description here..."></textarea>
+                    <button class="btn btn-primary" id="btnAnalyzeMatch" style="margin-top: 12px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
+                        Analyze Match
+                    </button>
+                </div>
+
+                <div class="form-card" id="msResultCard" style="display:none;">
+                    <div class="ms-score-header">
+                        <div class="ms-score-ring" id="msScoreRing">
+                            <span id="msScoreNum">0</span>
+                            <small>/ 100</small>
+                        </div>
+                        <div class="ms-score-info">
+                            <h3 id="msScoreLabel">Analyzing...</h3>
+                            <p id="msScoreAdvice"></p>
+                        </div>
+                    </div>
+
+                    <div class="ms-breakdown">
+                        <div class="ms-section">
+                            <h4>✅ Matching Skills</h4>
+                            <div class="tags-wrap" id="msMatchedSkills"></div>
+                        </div>
+                        <div class="ms-section">
+                            <h4>❌ Missing Skills</h4>
+                            <div class="tags-wrap" id="msMissingSkills"></div>
+                        </div>
+                        <div class="ms-section">
+                            <h4>📊 Breakdown</h4>
+                            <div id="msBreakdown"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm" id="btnSaveMatch" style="margin-top:12px;">💾 Save to
+                        Applications</button>
+                </div>
+            </section>
+
+            <!-- ── Applications Panel ── -->
+            <section class="panel" id="panel-applications">
+                <div class="panel-header">
+                    <div>
+                        <h1>Applications</h1>
+                        <p class="panel-subtitle">Track your job applications</p>
+                    </div>
+                    <button class="btn btn-primary" id="btnAddApp">
+                        + Add Application
+                    </button>
+                </div>
+
+                <div class="app-filters">
+                    <button class="app-filter active" data-filter="all">All</button>
+                    <button class="app-filter" data-filter="saved">💾 Saved</button>
+                    <button class="app-filter" data-filter="applied">📤 Applied</button>
+                    <button class="app-filter" data-filter="interview">🎯 Interview</button>
+                    <button class="app-filter" data-filter="offer">🏆 Offer</button>
+                    <button class="app-filter" data-filter="rejected">❌ Rejected</button>
+                </div>
+
+                <div class="stats-row stats-row-sm">
+                    <div class="stat-card stat-mini"><span class="stat-num" id="appStatTotal">0</span><span
+                            class="stat-label">Total</span></div>
+                    <div class="stat-card stat-mini"><span class="stat-num" id="appStatApplied">0</span><span
+                            class="stat-label">Applied</span></div>
+                    <div class="stat-card stat-mini"><span class="stat-num" id="appStatInterview">0</span><span
+                            class="stat-label">Interviews</span></div>
+                    <div class="stat-card stat-mini"><span class="stat-num" id="appStatOffer">0</span><span
+                            class="stat-label">Offers</span></div>
+                </div>
+
+                <div id="appList" class="app-list">
+                    <div class="timeline-empty">
+                        <p>No applications tracked yet. Add your first one!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Cover Letter Panel ── -->
+            <section class="panel" id="panel-coverletter">
+                <div class="panel-header">
+                    <div>
+                        <h1>Cover Letter</h1>
+                        <p class="panel-subtitle">Generate a tailored cover letter for any job</p>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <h3>📝 Job Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" id="clCompany" class="input" placeholder="e.g. Google">
+                        </div>
+                        <div class="form-group">
+                            <label>Job Title</label>
+                            <input type="text" id="clJobTitle" class="input" placeholder="e.g. Software Engineer">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Description (paste to personalize)</label>
+                        <textarea id="clJobDesc" class="input textarea-lg" rows="4"
+                            placeholder="Paste key requirements..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tone</label>
+                            <select id="clTone" class="input">
+                                <option value="professional">Professional</option>
+                                <option value="enthusiastic">Enthusiastic</option>
+                                <option value="concise">Concise & Direct</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Hiring Manager (optional)</label>
+                            <input type="text" id="clManager" class="input" placeholder="e.g. Mr. Smith">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btnGenerateCL" style="margin-top: 12px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        ✨ Generate Cover Letter
+                    </button>
+                </div>
+
+                <div class="form-card" id="clResultCard" style="display:none;">
+                    <div class="dash-card-header">
+                        <h3>✉️ Your Cover Letter</h3>
+                        <div>
+                            <button class="btn btn-sm" id="btnCopyCL">📋 Copy</button>
+                            <button class="btn btn-sm" id="btnDownloadCL" style="margin-left:6px;">💾 Download</button>
+                        </div>
+                    </div>
+                    <div class="cl-output" id="clOutput"></div>
                 </div>
             </section>
 

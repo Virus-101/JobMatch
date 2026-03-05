@@ -767,6 +767,416 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { el.style.animation = 'toastOut 0.3s ease'; setTimeout(() => el.remove(), 300); }, 3500);
     }
 
+    // ════════════════════════════════════════════
+    // ★ JOB SEARCH ★
+    // ════════════════════════════════════════════
+    function initJobSearch() {
+        const titleInput = document.getElementById('jsTitle');
+        const locInput = document.getElementById('jsLocation');
+        if (profile.title) titleInput.value = profile.title;
+        if (profile.location) locInput.value = profile.location;
+
+        // Populate skill search tags
+        const skillTagsC = document.getElementById('jsSkillTags');
+        if (skillTagsC && profile.skills.length) {
+            skillTagsC.innerHTML = '';
+            profile.skills.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = 'skill-search-tag';
+                btn.textContent = s;
+                btn.addEventListener('click', () => {
+                    titleInput.value = s;
+                    document.getElementById('btnSearchJobs').click();
+                });
+                skillTagsC.appendChild(btn);
+            });
+        } else if (skillTagsC) {
+            skillTagsC.innerHTML = '<p class="dash-empty-text">Upload your CV first to see your skills here.</p>';
+        }
+    }
+
+    document.getElementById('btnSearchJobs').addEventListener('click', () => {
+        const title = document.getElementById('jsTitle').value.trim();
+        const location = document.getElementById('jsLocation').value.trim();
+        if (!title) { toast('Enter a job title or keyword to search.', 'error'); return; }
+
+        const q = encodeURIComponent(title);
+        const loc = encodeURIComponent(location);
+
+        const platforms = [
+            { name: 'LinkedIn', icon: '🔗', color: '#0A66C2', url: `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${loc}` },
+            { name: 'Indeed', icon: '🟦', color: '#2164f3', url: `https://www.indeed.com/jobs?q=${q}&l=${loc}` },
+            { name: 'Glassdoor', icon: '🟢', color: '#0caa41', url: `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${q}&locT=C&locKeyword=${loc}` },
+            { name: 'Google Jobs', icon: '🔍', color: '#4285F4', url: `https://www.google.com/search?q=${encodeURIComponent(title + ' jobs ' + location)}&ibp=htl;jobs` },
+            { name: 'RemoteOK', icon: '🌍', color: '#FF4742', url: `https://remoteok.com/remote-${q.replace(/%20/g, '-')}-jobs` },
+            { name: 'We Work Remotely', icon: '💻', color: '#1a1a2e', url: `https://weworkremotely.com/remote-jobs/search?term=${q}` },
+            { name: 'ZipRecruiter', icon: '📋', color: '#6b9f1e', url: `https://www.ziprecruiter.com/jobs-search?search=${q}&location=${loc}` },
+            { name: 'Monster', icon: '👾', color: '#6e45a5', url: `https://www.monster.com/jobs/search?q=${q}&where=${loc}` },
+        ];
+
+        const container = document.getElementById('jsPlatforms');
+        container.innerHTML = '';
+        platforms.forEach(p => {
+            const a = document.createElement('a');
+            a.href = p.url;
+            a.target = '_blank';
+            a.className = 'js-platform-card';
+            a.style.borderColor = p.color + '40';
+            a.innerHTML = `
+                <span class="js-platform-icon">${p.icon}</span>
+                <span class="js-platform-name">${p.name}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            `;
+            container.appendChild(a);
+        });
+
+        document.getElementById('jsResultsCard').style.display = 'block';
+        toast(`🔍 Search links ready for "${title}"`, 'success');
+    });
+
+    // ════════════════════════════════════════════
+    // ★ MATCH SCORE ★
+    // ════════════════════════════════════════════
+    document.getElementById('btnAnalyzeMatch').addEventListener('click', () => {
+        const jd = document.getElementById('msJobDesc').value.trim();
+        if (!jd) { toast('Paste a job description first.', 'error'); return; }
+        if (!profile.skills || !profile.skills.length) { toast('Upload your CV first to detect your skills.', 'error'); return; }
+
+        const jdLower = jd.toLowerCase();
+
+        // 1) Skill matching
+        const matched = [], missing = [];
+        const allSkills = new Set();
+        // Extract skills mentioned in JD
+        const skillsDb = profile.skills;
+        const jdSkills = CVParser.extractSkills(jd);
+
+        skillsDb.forEach(s => {
+            const sLow = s.toLowerCase();
+            if (jdLower.includes(sLow) || jdSkills.map(x => x.toLowerCase()).includes(sLow)) {
+                matched.push(s);
+            }
+        });
+        jdSkills.forEach(s => {
+            if (!skillsDb.map(x => x.toLowerCase()).includes(s.toLowerCase())) {
+                missing.push(s);
+            }
+        });
+
+        // 2) Title match
+        let titleScore = 0;
+        if (profile.title) {
+            const titleWords = profile.title.toLowerCase().split(/\s+/);
+            const matchedWords = titleWords.filter(w => w.length > 2 && jdLower.includes(w));
+            titleScore = Math.min(100, (matchedWords.length / Math.max(titleWords.length, 1)) * 100);
+        }
+
+        // 3) Experience match
+        let expScore = 0;
+        if (profile.experience && profile.experience.length) {
+            const expKeywords = [];
+            profile.experience.forEach(e => {
+                if (e.title) expKeywords.push(...e.title.toLowerCase().split(/\s+/));
+                if (e.description) e.description.forEach(d => expKeywords.push(...d.toLowerCase().split(/\s+/).filter(w => w.length > 4)));
+            });
+            const expMatched = expKeywords.filter(w => jdLower.includes(w));
+            expScore = Math.min(100, (expMatched.length / Math.max(expKeywords.length * 0.3, 1)) * 100);
+        }
+
+        // 4) Education match
+        let eduScore = 0;
+        if (profile.education && profile.education.length) {
+            const eduKeywords = ['bachelor', 'master', 'phd', 'degree', 'computer science', 'engineering', 'data science'];
+            profile.education.forEach(e => {
+                if (e.degree) {
+                    const words = e.degree.toLowerCase().split(/\s+/);
+                    words.forEach(w => { if (jdLower.includes(w) && w.length > 3) eduScore += 20; });
+                }
+            });
+            eduScore = Math.min(100, eduScore);
+        }
+
+        // 5) Calculate overall score
+        const skillScore = jdSkills.length > 0 ? (matched.length / Math.max(jdSkills.length, 1)) * 100 : (matched.length > 0 ? 60 : 0);
+        const overall = Math.round(skillScore * 0.40 + titleScore * 0.25 + expScore * 0.20 + eduScore * 0.15);
+
+        // Display results
+        document.getElementById('msResultCard').style.display = 'block';
+        const scoreNum = document.getElementById('msScoreNum');
+        const ring = document.getElementById('msScoreRing');
+
+        // Animate score
+        let current = 0;
+        const interval = setInterval(() => {
+            current += 2;
+            if (current >= overall) { current = overall; clearInterval(interval); }
+            scoreNum.textContent = current;
+        }, 20);
+
+        // Color the ring
+        const color = overall >= 80 ? '#10B981' : overall >= 60 ? '#6366F1' : overall >= 40 ? '#F59E0B' : '#EF4444';
+        ring.style.background = `conic-gradient(${color} ${overall * 3.6}deg, rgba(255,255,255,0.06) 0deg)`;
+
+        // Labels
+        const labels = {
+            80: ['🔥 Excellent Match', 'You\'re a strong candidate! Apply with confidence.'],
+            60: ['⭐ Great Match', 'Very good fit. Highlight your matching skills.'],
+            40: ['👍 Good Match', 'Decent fit. Consider upskilling the missing areas.'],
+            0: ['🤔 Fair Match', 'Some gaps. Focus on transferable skills in your application.']
+        };
+        const [label, advice] = Object.entries(labels).sort(([a], [b]) => b - a).find(([threshold]) => overall >= threshold)?.[1] || labels[0];
+        document.getElementById('msScoreLabel').textContent = label;
+        document.getElementById('msScoreAdvice').textContent = advice;
+
+        // Matched/Missing tags
+        const matchedC = document.getElementById('msMatchedSkills');
+        const missingC = document.getElementById('msMissingSkills');
+        matchedC.innerHTML = matched.length ? matched.map(s => `<span class="tag tag-match">${esc(s)}</span>`).join('') : '<p class="dash-empty-text">No matching skills found</p>';
+        missingC.innerHTML = missing.length ? missing.map(s => `<span class="tag tag-miss">${esc(s)}</span>`).join('') : '<p class="dash-empty-text">No missing skills — great coverage!</p>';
+
+        // Breakdown bars
+        const breakdown = document.getElementById('msBreakdown');
+        const factors = [
+            { name: 'Skills Match', score: Math.round(skillScore), weight: '40%' },
+            { name: 'Title Match', score: Math.round(titleScore), weight: '25%' },
+            { name: 'Experience', score: Math.round(expScore), weight: '20%' },
+            { name: 'Education', score: Math.round(eduScore), weight: '15%' },
+        ];
+        breakdown.innerHTML = factors.map(f => `
+            <div class="ms-bar-row">
+                <span class="ms-bar-label">${f.name} <small>(${f.weight})</small></span>
+                <div class="ms-bar-track"><div class="ms-bar-fill" style="width:${f.score}%; background:${f.score >= 60 ? '#10B981' : f.score >= 30 ? '#F59E0B' : '#EF4444'};"></div></div>
+                <span class="ms-bar-val">${f.score}%</span>
+            </div>
+        `).join('');
+
+        // Store last match for save
+        window._lastMatch = { title: '', jd, score: overall, matched, missing, date: new Date().toISOString() };
+        toast(`📊 Match score: ${overall}/100`, 'success');
+    });
+
+    document.getElementById('btnSaveMatch').addEventListener('click', () => {
+        if (!window._lastMatch) return;
+        const apps = JSON.parse(localStorage.getItem('jm_applications') || '[]');
+        apps.push({
+            id: Date.now(),
+            company: 'Unknown (from Match Score)',
+            title: window._lastMatch.title || 'Job from Match Score',
+            score: window._lastMatch.score,
+            status: 'saved',
+            date: window._lastMatch.date,
+            notes: `Score: ${window._lastMatch.score}/100. Matched: ${window._lastMatch.matched.join(', ')}`
+        });
+        localStorage.setItem('jm_applications', JSON.stringify(apps));
+        fillApplications();
+        toast('💾 Saved to Applications!', 'success');
+    });
+
+    // ════════════════════════════════════════════
+    // ★ APPLICATIONS TRACKER ★
+    // ════════════════════════════════════════════
+    function getApps() { return JSON.parse(localStorage.getItem('jm_applications') || '[]'); }
+    function saveApps(apps) { localStorage.setItem('jm_applications', JSON.stringify(apps)); }
+
+    let appFilter = 'all';
+    document.querySelectorAll('.app-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.app-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            appFilter = btn.dataset.filter;
+            fillApplications();
+        });
+    });
+
+    document.getElementById('btnAddApp').addEventListener('click', () => {
+        const company = prompt('Company name:');
+        if (!company) return;
+        const title = prompt('Job title:');
+        const url = prompt('Job URL (optional):') || '';
+        const apps = getApps();
+        apps.push({ id: Date.now(), company, title: title || '', url, status: 'saved', score: 0, date: new Date().toISOString(), notes: '' });
+        saveApps(apps);
+        fillApplications();
+        toast('✅ Application added!', 'success');
+    });
+
+    function fillApplications() {
+        const apps = getApps();
+        const filtered = appFilter === 'all' ? apps : apps.filter(a => a.status === appFilter);
+
+        // Stats
+        document.getElementById('appStatTotal').textContent = apps.length;
+        document.getElementById('appStatApplied').textContent = apps.filter(a => a.status === 'applied').length;
+        document.getElementById('appStatInterview').textContent = apps.filter(a => a.status === 'interview').length;
+        document.getElementById('appStatOffer').textContent = apps.filter(a => a.status === 'offer').length;
+
+        const container = document.getElementById('appList');
+        if (!filtered.length) {
+            container.innerHTML = '<div class="timeline-empty"><p>No applications in this category.</p></div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(app => {
+            const statusEmoji = { saved: '💾', applied: '📤', interview: '🎯', offer: '🏆', rejected: '❌' };
+            const statusColors = { saved: '#818CF8', applied: '#3B82F6', interview: '#F59E0B', offer: '#10B981', rejected: '#EF4444' };
+            const el = document.createElement('div');
+            el.className = 'app-item';
+            el.innerHTML = `
+                <div class="app-item-left">
+                    <div class="app-status-dot" style="background:${statusColors[app.status] || '#818CF8'}"></div>
+                    <div class="app-item-info">
+                        <div class="app-item-title">${esc(app.title || 'Untitled Position')}</div>
+                        <div class="app-item-company">${esc(app.company)} ${app.score ? `<span class="app-score">${app.score}/100</span>` : ''}</div>
+                        <div class="app-item-date">${new Date(app.date).toLocaleDateString()}</div>
+                    </div>
+                </div>
+                <div class="app-item-right">
+                    <select class="app-status-select" data-id="${app.id}">
+                        <option value="saved" ${app.status === 'saved' ? 'selected' : ''}>💾 Saved</option>
+                        <option value="applied" ${app.status === 'applied' ? 'selected' : ''}>📤 Applied</option>
+                        <option value="interview" ${app.status === 'interview' ? 'selected' : ''}>🎯 Interview</option>
+                        <option value="offer" ${app.status === 'offer' ? 'selected' : ''}>🏆 Offer</option>
+                        <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>❌ Rejected</option>
+                    </select>
+                    ${app.url ? `<a href="${esc(app.url)}" target="_blank" class="btn btn-sm" title="Open">🔗</a>` : ''}
+                    <button class="btn btn-sm app-remove" data-id="${app.id}" title="Remove">🗑️</button>
+                </div>
+            `;
+
+            el.querySelector('.app-status-select').addEventListener('change', e => {
+                const apps = getApps();
+                const a = apps.find(x => x.id === +e.target.dataset.id);
+                if (a) { a.status = e.target.value; saveApps(apps); fillApplications(); }
+            });
+
+            el.querySelector('.app-remove').addEventListener('click', e => {
+                const apps = getApps().filter(x => x.id !== +e.target.dataset.id);
+                saveApps(apps);
+                fillApplications();
+                toast('Application removed.', 'success');
+            });
+
+            container.appendChild(el);
+        });
+    }
+
+    // ════════════════════════════════════════════
+    // ★ COVER LETTER GENERATOR ★
+    // ════════════════════════════════════════════
+    document.getElementById('btnGenerateCL').addEventListener('click', () => {
+        const company = document.getElementById('clCompany').value.trim();
+        const jobTitle = document.getElementById('clJobTitle').value.trim();
+        const jobDesc = document.getElementById('clJobDesc').value.trim();
+        const tone = document.getElementById('clTone').value;
+        const manager = document.getElementById('clManager').value.trim();
+
+        if (!company || !jobTitle) { toast('Enter a company name and job title.', 'error'); return; }
+        if (!profile.name) { toast('Upload your CV first to populate your profile.', 'error'); return; }
+
+        // Extract relevant skills from JD
+        const jdSkills = jobDesc ? CVParser.extractSkills(jobDesc) : [];
+        const matchedSkills = profile.skills.filter(s => jdSkills.map(x => x.toLowerCase()).includes(s.toLowerCase()));
+        const topSkills = (matchedSkills.length ? matchedSkills : profile.skills).slice(0, 5);
+
+        // Experience summary
+        const latestExp = profile.experience && profile.experience.length ? profile.experience[0] : null;
+        const expYears = latestExp && latestExp.dateRange ? (() => {
+            const m = latestExp.dateRange.match(/\d{4}/);
+            return m ? new Date().getFullYear() - parseInt(m[0]) : '';
+        })() : '';
+
+        const greeting = manager ? `Dear ${manager},` : 'Dear Hiring Manager,';
+        const name = profile.name;
+        const title = profile.title || jobTitle;
+
+        // Generate based on tone
+        let letter = '';
+        const skillStr = topSkills.join(', ');
+        const latestRole = latestExp ? `${latestExp.title} at ${latestExp.company}` : '';
+
+        if (tone === 'enthusiastic') {
+            letter = `${greeting}
+
+I am thrilled to apply for the ${jobTitle} position at ${company}! As a passionate ${title} with a strong background in ${skillStr}, I am confident that I can make a meaningful impact on your team.
+
+${latestRole ? `In my most recent role as ${latestRole}, I developed expertise in ${topSkills.slice(0, 3).join(', ')}, which directly aligns with the requirements of this position.` : `My expertise in ${skillStr} makes me an ideal candidate for this role.`}
+
+${jobDesc ? `What excites me most about this opportunity is the chance to work with cutting-edge technologies and contribute to ${company}'s mission. My experience with ${topSkills.slice(0, 2).join(' and ')} positions me perfectly to hit the ground running.` : `I am eager to bring my skills and enthusiasm to ${company} and contribute to your team's success.`}
+
+${profile.education && profile.education.length ? `I hold a ${profile.education[0].degree || 'degree'}, which has provided me with a solid foundation in the theoretical and practical aspects of this field.` : ''}
+
+I would welcome the opportunity to discuss how my background and skills can benefit ${company}. Thank you for considering my application!
+
+Warm regards,
+${name}
+${profile.email || ''}
+${profile.phone || ''}`;
+        } else if (tone === 'concise') {
+            letter = `${greeting}
+
+I am writing to apply for the ${jobTitle} position at ${company}.
+
+Key qualifications:
+${topSkills.map(s => `• ${s}`).join('\n')}
+${latestRole ? `• Recent experience: ${latestRole}` : ''}
+${profile.education && profile.education.length ? `• Education: ${profile.education[0].degree || ''}` : ''}
+
+${jobDesc ? `My skills in ${topSkills.slice(0, 3).join(', ')} directly address your requirements.` : `I believe my technical expertise makes me a strong candidate.`} I am ready to contribute immediately.
+
+Available for an interview at your convenience.
+
+Best regards,
+${name}
+${profile.email || ''} | ${profile.phone || ''}`;
+        } else {
+            // Professional (default)
+            letter = `${greeting}
+
+I am writing to express my interest in the ${jobTitle} position at ${company}. With my background as a ${title} and proficiency in ${skillStr}, I believe I would be a valuable addition to your team.
+
+${latestRole ? `Currently serving as ${latestRole}, I have gained hands-on experience in ${topSkills.slice(0, 3).join(', ')}. This experience has prepared me to contribute effectively to your organization from day one.` : `My professional experience has equipped me with strong expertise in ${skillStr}, enabling me to deliver high-quality results in fast-paced environments.`}
+
+${jobDesc ? `After reviewing the job description, I am confident that my skills align well with your requirements. My expertise in ${matchedSkills.length ? matchedSkills.slice(0, 3).join(', ') : topSkills.slice(0, 3).join(', ')} would enable me to make immediate contributions to your projects.` : ''}
+
+${profile.summary ? profile.summary.split('.').slice(0, 2).join('.') + '.' : ''}
+
+${profile.education && profile.education.length ? `My educational background includes a ${profile.education[0].degree || 'degree'}, which has provided me with a comprehensive understanding of the field.` : ''}
+
+I would appreciate the opportunity to discuss how my experience and skills can contribute to ${company}'s goals. I am available for an interview at your earliest convenience.
+
+Thank you for your consideration.
+
+Sincerely,
+${name}
+${profile.email || ''}
+${profile.phone || ''}`;
+        }
+
+        // Display
+        document.getElementById('clResultCard').style.display = 'block';
+        document.getElementById('clOutput').innerHTML = letter.split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+        toast('✨ Cover letter generated!', 'success');
+    });
+
+    document.getElementById('btnCopyCL').addEventListener('click', () => {
+        const text = document.getElementById('clOutput').innerText;
+        navigator.clipboard.writeText(text).then(() => toast('📋 Copied to clipboard!', 'success'));
+    });
+
+    document.getElementById('btnDownloadCL').addEventListener('click', () => {
+        const text = document.getElementById('clOutput').innerText;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `cover-letter-${document.getElementById('clCompany').value.replace(/\s+/g, '-').toLowerCase() || 'draft'}.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('💾 Downloaded!', 'success');
+    });
+
     // ── Init ─────────────────────────────────
     refreshAll();
+    initJobSearch();
+    fillApplications();
 });
