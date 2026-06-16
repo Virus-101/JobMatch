@@ -161,7 +161,8 @@ class LinkedInStrategy extends BaseStrategy {
             if (text.includes('years') && text.includes('experience')) {
                 const input = await q.$('input[type="text"], input[type="number"]');
                 if (input) {
-                    const years = profile.experience?.length ? String(profile.experience.length + 1) : '3';
+                    const computed = profile.yearsOfExperience;
+                    const years = (computed && computed > 0) ? String(Math.round(computed)) : '3';
                     await input.click({ clickCount: 3 });
                     await input.type(years, { delay: 50 });
                 }
@@ -169,8 +170,17 @@ class LinkedInStrategy extends BaseStrategy {
 
             // Work authorization
             if (text.includes('authorized') || text.includes('sponsorship') || text.includes('work permit')) {
-                const yesRadio = await q.$('input[value="Yes"], label:has-text("Yes")');
-                if (yesRadio) await yesRadio.click();
+                // Prefer a radio with value "Yes"; otherwise click a label whose text is "Yes"
+                // (Puppeteer's querySelector has no :has-text, so match label text manually).
+                const yesClicked = await q.evaluate((el) => {
+                    const valueRadio = el.querySelector('input[type="radio"][value="Yes" i]');
+                    if (valueRadio) { valueRadio.click(); return true; }
+                    const labels = Array.from(el.querySelectorAll('label'));
+                    const yesLabel = labels.find(l => l.textContent.trim().toLowerCase() === 'yes');
+                    if (yesLabel) { yesLabel.click(); return true; }
+                    return false;
+                });
+                void yesClicked;
             }
 
             // Select dropdowns

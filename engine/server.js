@@ -15,8 +15,38 @@ const engine = require('./apply-engine');
 const browserManager = require('./browser');
 
 const app = express();
-app.use(cors());
+
+// ── Security: the engine drives YOUR logged-in Chrome and can submit job
+// applications, so the API must only be reachable from the local dashboard.
+// 1) Bind to loopback only (see server.listen below) — no LAN/remote access.
+// 2) Restrict CORS to localhost/127.0.0.1 origins (never a wildcard).
+// 3) Guard state-changing routes against cross-site requests (CSRF): a
+//    malicious page you visit could otherwise POST to /api/start. We reject
+//    any request whose Origin/Referer isn't local.
+const isLocalOrigin = (origin) => {
+    if (!origin) return true; // non-browser tools (curl, the engine itself)
+    try {
+        const { hostname } = new URL(origin);
+        return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+    } catch {
+        return false;
+    }
+};
+
+app.use(cors({
+    origin: (origin, cb) => cb(null, isLocalOrigin(origin)),
+}));
 app.use(express.json());
+
+// Reject cross-site state-changing requests (CSRF protection).
+app.use((req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+    const source = req.headers.origin || req.headers.referer;
+    if (source && !isLocalOrigin(source)) {
+        return res.status(403).json({ error: 'Cross-site requests are not allowed' });
+    }
+    next();
+});
 
 // Serve the dashboard
 app.use(express.static(path.join(__dirname, '..', 'docs')));
@@ -144,7 +174,7 @@ app.post('/api/close', async (req, res) => {
 // ── Start server ────────────────────────────────
 const PORT = process.env.PORT || 3456;
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
     console.log('');
     console.log('╔═══════════════════════════════════════════╗');
     console.log('║    🚀 JobMatch AI — Auto-Apply Engine     ║');

@@ -31,7 +31,7 @@ const JobMatcher = {
             return { score: 0, breakdown, excluded: true };
         }
 
-        const totalScore = Math.round(
+        const rawScore = Math.round(
             breakdown.skills * weights.skills +
             breakdown.title * weights.title +
             breakdown.location * weights.location +
@@ -40,8 +40,10 @@ const JobMatcher = {
             breakdown.salary * weights.salary
         );
 
+        const totalScore = Math.min(100, Math.max(0, rawScore));
+
         return {
-            score: Math.min(100, Math.max(0, totalScore)),
+            score: totalScore,
             breakdown,
             matchLevel: this.getMatchLevel(totalScore),
             matchedSkills: this.getMatchedSkills(jobData, profile),
