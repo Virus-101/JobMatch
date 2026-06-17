@@ -41,6 +41,7 @@ class LinkedInStrategy extends BaseStrategy {
                 const companyEl = card.querySelector('.job-card-container__primary-description, .artdeco-entity-lockup__subtitle');
                 const locationEl = card.querySelector('.job-card-container__metadata-item, .artdeco-entity-lockup__caption');
                 const linkEl = card.querySelector('a[href*="/jobs/view/"]');
+                const salaryEl = card.querySelector('.job-card-container__metadata-item--salary, [class*="salary"]');
                 const easyApply = card.querySelector('.job-card-container__apply-method') !== null ||
                     card.textContent.includes('Easy Apply');
 
@@ -49,6 +50,7 @@ class LinkedInStrategy extends BaseStrategy {
                         title: titleEl.textContent.trim(),
                         company: companyEl ? companyEl.textContent.trim() : '',
                         location: locationEl ? locationEl.textContent.trim() : '',
+                        salary: salaryEl ? salaryEl.textContent.trim() : '',
                         url: linkEl.href.split('?')[0],
                         easyApply,
                         platform: 'linkedin',

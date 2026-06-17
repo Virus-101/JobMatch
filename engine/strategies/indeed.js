@@ -37,6 +37,7 @@ class IndeedStrategy extends BaseStrategy {
                 const titleEl = card.querySelector('.jobTitle a, h2.jobTitle a, a[data-jk]');
                 const companyEl = card.querySelector('.companyName, [data-testid="company-name"]');
                 const locationEl = card.querySelector('.companyLocation, [data-testid="text-location"]');
+                const salaryEl = card.querySelector('.salary-snippet-container, .estimatedSalary, [data-testid="attribute_snippet_testid"], .metadata.salary-snippet-container');
                 const indeedApply = card.querySelector('.indeedApply, .iaLabel') !== null ||
                     card.textContent.includes('Easily apply');
 
@@ -48,6 +49,7 @@ class IndeedStrategy extends BaseStrategy {
                         title: titleEl.textContent.trim(),
                         company: companyEl ? companyEl.textContent.trim() : '',
                         location: locationEl ? locationEl.textContent.trim() : '',
+                        salary: salaryEl ? salaryEl.textContent.trim() : '',
                         url: jk ? `https://www.indeed.com/viewjob?jk=${jk}` : href,
                         easyApply: indeedApply,
                         platform: 'indeed',

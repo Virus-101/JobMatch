@@ -382,6 +382,18 @@ document.addEventListener('DOMContentLoaded', () => {
         processingBar.style.display = 'flex';
 
         try {
+            // Keep the raw file (base64) so the Auto-Apply engine can attach the
+            // actual resume to applications, not just the extracted text.
+            try {
+                profile.cvFileData = await new Promise((resolve, reject) => {
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = reject;
+                    fr.readAsDataURL(file);
+                });
+                profile.cvFileName = file.name;
+            } catch { /* non-fatal: text-only fallback */ }
+
             let text = '';
             if (ext === 'pdf') {
                 const ab = await file.arrayBuffer();
@@ -1401,6 +1413,8 @@ ${profile.phone || ''}`;
                         maxApplicationsPerSession: parseInt(document.getElementById('aaMaxApps').value) || 25,
                         easyApplyOnly: document.getElementById('aaEasyOnly').checked,
                         skipApplied: document.getElementById('aaSkipApplied').checked,
+                        salaryMin: (profile.preferences && profile.preferences.salaryMin) || 0,
+                        minMatchScore: (profile.preferences && profile.preferences.minMatchScore) || 0,
                     },
                 }),
             });

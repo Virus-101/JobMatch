@@ -7,6 +7,7 @@ const LinkedInStrategy = require('./strategies/linkedin');
 const IndeedStrategy = require('./strategies/indeed');
 const GenericStrategy = require('./strategies/generic');
 const browserManager = require('./browser');
+const filters = require('./filters');
 const fs = require('fs');
 const path = require('path');
 
@@ -30,6 +31,9 @@ class ApplyEngine {
             platforms: ['linkedin', 'indeed'],
             query: '',
             location: '',
+            salaryMin: 0,      // skip jobs whose listed pay is clearly below this
+            salaryMax: 0,
+            minMatchScore: 0,  // skip jobs below this title/location fit score (0 = off)
             easyApplyOnly: true,
             skipApplied: true,
             autoSubmit: false, // false = fill only, user reviews. true = auto submit.
@@ -52,10 +56,31 @@ class ApplyEngine {
     // Load profile from file or localStorage export
     loadProfile(profileData) {
         this.profile = profileData;
+        this._prepareResumeFile();
         this._emit('profile_loaded', {
             name: profileData.name,
             skills: profileData.skills?.length || 0,
+            resume: this.profile.cvFilePath ? path.basename(this.profile.cvFilePath) : null,
         });
+    }
+
+    // If the dashboard sent the raw CV bytes (base64), persist them to disk so
+    // strategies can attach the actual resume file to applications.
+    _prepareResumeFile() {
+        const p = this.profile;
+        if (!p || !p.cvFileData || p.cvFilePath) return;
+        try {
+            const dataDir = path.join(__dirname, 'data');
+            if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+            const safeName = (p.cvFileName || 'resume.pdf').replace(/[^\w.\-]/g, '_');
+            const base64 = String(p.cvFileData).replace(/^data:[^;]+;base64,/, '');
+            const filePath = path.join(dataDir, safeName);
+            fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+            p.cvFilePath = filePath;
+            this._emit('status', { message: `📎 Resume ready for upload: ${safeName}` });
+        } catch (e) {
+            this._emit('warning', { message: `Could not save resume file: ${e.message}` });
+        }
     }
 
     // Load application history
@@ -116,6 +141,24 @@ class ApplyEngine {
             return;
         }
 
+        // Fall back to saved preferences when the dashboard didn't specify
+        // search terms, so "use what's on my profile" works out of the box.
+        const prefs = this.profile.preferences || {};
+        if (!this.settings.query) {
+            this.settings.query = (prefs.desiredTitles && prefs.desiredTitles[0]) || this.profile.title || '';
+        }
+        if (!this.settings.location) {
+            this.settings.location = (prefs.desiredLocations && prefs.desiredLocations[0]) || this.profile.location || '';
+        }
+        if (!this.settings.salaryMin) {
+            this.settings.salaryMin = prefs.salaryMin || 0;
+        }
+
+        if (!this.settings.query) {
+            this._emit('error', { message: 'No job title to search. Set a desired title in your profile or the search box.' });
+            return;
+        }
+
         this.isRunning = true;
         this.isPaused = false;
         this._emit('started', { settings: this.settings });
@@ -161,17 +204,24 @@ class ApplyEngine {
 
                 this._emit('jobs_found', { platform, count: jobs.length });
 
-                // Filter jobs
+                // Filter jobs: Easy Apply, already-applied, then salary + fit
+                const skipReasons = {};
+                const bump = (reason) => { skipReasons[reason] = (skipReasons[reason] || 0) + 1; };
+
                 const filtered = jobs.filter(job => {
-                    if (this.settings.easyApplyOnly && !job.easyApply) return false;
-                    if (this.settings.skipApplied) {
-                        const alreadyInHistory = this.results.some(r => r.url === job.url);
-                        if (alreadyInHistory) return false;
-                    }
+                    if (this.settings.easyApplyOnly && !job.easyApply) { bump('not_easy_apply'); return false; }
+                    if (this.settings.skipApplied && this.results.some(r => r.url === job.url)) { bump('already_applied'); return false; }
+
+                    const verdict = filters.passesFilters(job, this.profile, this.settings);
+                    if (!verdict.ok) { bump(verdict.reason); return false; }
+                    job.matchScore = verdict.score;
                     return true;
                 });
 
-                this._emit('status', { message: `📋 ${filtered.length} jobs to apply (${jobs.length - filtered.length} filtered out)` });
+                const reasonText = Object.entries(skipReasons).map(([r, n]) => `${n} ${r}`).join(', ');
+                this._emit('status', {
+                    message: `📋 ${filtered.length} jobs to apply${reasonText ? ` (filtered out: ${reasonText})` : ''}`,
+                });
 
                 // Add to queue
                 this.queue.push(...filtered);
