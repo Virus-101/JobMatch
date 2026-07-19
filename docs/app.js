@@ -1212,6 +1212,13 @@ ${profile.phone || ''}`;
             const l = document.getElementById('aaLocation');
             if (!q.value && profile.title) q.value = profile.title;
             if (!l.value && profile.location) l.value = profile.location;
+
+            // Pre-fill salary floor / min match from saved preferences
+            const prefs = profile.preferences || {};
+            const sal = document.getElementById('aaSalaryMin');
+            const score = document.getElementById('aaMinScore');
+            if (sal && !sal.value && prefs.salaryMin) sal.value = prefs.salaryMin;
+            if (score && !score.value && prefs.minMatchScore) score.value = prefs.minMatchScore;
         } else {
             status.className = 'aa-connection offline';
             status.innerHTML = '<span class="aa-dot"></span> Engine Offline';
@@ -1413,8 +1420,8 @@ ${profile.phone || ''}`;
                         maxApplicationsPerSession: parseInt(document.getElementById('aaMaxApps').value) || 25,
                         easyApplyOnly: document.getElementById('aaEasyOnly').checked,
                         skipApplied: document.getElementById('aaSkipApplied').checked,
-                        salaryMin: (profile.preferences && profile.preferences.salaryMin) || 0,
-                        minMatchScore: (profile.preferences && profile.preferences.minMatchScore) || 0,
+                        salaryMin: parseInt(document.getElementById('aaSalaryMin').value) || 0,
+                        minMatchScore: parseInt(document.getElementById('aaMinScore').value) || 0,
                     },
                 }),
             });
